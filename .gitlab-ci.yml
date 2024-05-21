@@ -1,0 +1,16 @@
+variables:
+  MAVEN_CLI_OPTS: '--batch-mode --errors --fail-at-end --show-version'
+
+stages:
+  - build
+  - test
+
+build:
+  stage: build
+  script:
+    - mvn $MAVEN_CLI_OPTS clean package
+
+test:
+  stage: test
+  script:
+    - mvn $MAVEN_CLI_OPTS test
