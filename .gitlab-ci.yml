@@ -1,16 +1,26 @@
+image: $JDK_IMAGE
+
 variables:
   MAVEN_CLI_OPTS: '--batch-mode --errors --fail-at-end --show-version'
+  MAVEN_OPTS: >-
+    -Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository
+
+cache:
+  paths:
+    - .m2/repository
 
 stages:
-  - build
+  - compile
   - test
 
-build:
-  stage: build
+Maven Clean Compile:
+  stage: compile
   script:
-    - mvn $MAVEN_CLI_OPTS clean package
+    - echo "Compiling project"
+    - ./mvnw $MAVEN_CLI_OPTS clean compile
 
-test:
+Maven Test:
   stage: test
   script:
-    - mvn $MAVEN_CLI_OPTS test
+    - echo "Testing"
+    - ./mvnw $MAVEN_CLI_OPTS test
