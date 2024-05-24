@@ -11,8 +11,17 @@ cache:
     - .m2/repository
 
 stages:
+  - lint
   - compile
   - test
+
+Checkstyle Linting:
+  stage: lint
+  script:
+    - echo "Running checkstyles and linting"
+    - ./mvnw $MAVEN_CLI_OPTS checkstyle:check
+  except:
+    - main
 
 Maven Clean Compile:
   stage: compile

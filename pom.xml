@@ -41,6 +41,32 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.2.5</version>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>3.3.1</version>
+        <configuration>
+          <!-- Location of our custom rules for java code -->
+          <configLocation>GarminPay_Checkstyle.xml</configLocation>
+
+          <!-- This prevents build from failing on check warnings and displays them -->
+          <!-- Build will fail immediately if error found. Check errors are logged to STDOUT -->
+          <!-- https://maven.apache.org/plugins/maven-checkstyle-plugin/check-mojo.html -->
+          <violationSeverity>warning</violationSeverity>
+          <failsOnError>true</failsOnError>
+          <failOnViolation>false</failOnViolation>
+          <consoleOutput>true</consoleOutput>
+        </configuration>
+        <executions>
+          <execution>
+            <id>validate</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 </project>

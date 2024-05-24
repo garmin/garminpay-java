@@ -17,7 +17,9 @@ public class GarminPay {
      */
     public static void initialize(String clientId, String clientSecret) {
         if (clientId == null || clientId.isBlank() || clientSecret == null || clientSecret.isBlank()) {
-            throw new IllegalArgumentException("clientId and clientSecret cannot be null or empty");
+            throw new IllegalArgumentException(
+                    "clientId and clientSecret cannot be null or empty"
+            );
         }
 
         GarminPay.clientId = clientId;
