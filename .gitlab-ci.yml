@@ -13,7 +13,7 @@ cache:
 stages:
   - lint
   - compile
-  - test
+  - verify
 
 Checkstyle Linting:
   stage: lint
@@ -29,11 +29,13 @@ Maven Clean Compile:
     - echo "Compiling project"
     - ./mvnw $MAVEN_CLI_OPTS clean compile
 
-Maven Test:
-  stage: test
+Maven Verify:
+  stage: verify
   script:
     - echo "Testing"
-    - ./mvnw $MAVEN_CLI_OPTS test
+    - ./mvnw $MAVEN_CLI_OPTS verify
   artifacts:
     reports:
-      junit: $ARTIFACT_PATH/surefire-reports/*.xml
+      junit:
+        - $ARTIFACT_PATH/surefire-reports/*.xml
+        - $ARTIFACT_PATH/failsafe-reports/*.xml

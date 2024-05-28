@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class CardDataTest {
+class CardDataTest {
     private static final Address TESTING_ADDRESS = Address.builder()
         .name("Billing Address")
         .street1("123 Main St")
@@ -18,7 +18,7 @@ public class CardDataTest {
         .build();
 
     @Test
-    public void canCreateCardDataObject() {
+    void canCreateCardDataObject() {
         CardData cardData = CardData.builder()
             .pan("1234567890123456")
             .cvv("123")
@@ -32,7 +32,7 @@ public class CardDataTest {
     }
 
     @Test
-    public void cannotCreateCardObjectWithoutPan() {
+    void cannotCreateCardObjectWithoutPan() {
         assertThrows(IllegalArgumentException.class, () -> CardData.builder().build());
     }
 }
