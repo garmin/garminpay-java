@@ -11,16 +11,16 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * Unit Tests for GarminPay Initialization
  */
-public class InitializationTest {
+class InitializationTest {
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         // Reset the GarminPay state before each test
         GarminPay.initialize("defaultClientId", "defaultClientSecret");
     }
 
     @Test
-    public void canInitializeSDK() {
+    void canInitializeSDK() {
         String expectedClientId = "testClientId";
         String expectedClientSecret = "testClientSecret";
 
@@ -32,7 +32,7 @@ public class InitializationTest {
     }
 
     @Test
-    public void canReturnClientId() {
+    void canReturnClientId() {
         String expectedClientId = "testClientId";
 
         GarminPay.initialize(expectedClientId, "testClientSecret");
@@ -41,7 +41,7 @@ public class InitializationTest {
     }
 
     @Test
-    public void canReturnClientSecret() {
+    void canReturnClientSecret() {
         String expectedClientSecret = "testClientSecret";
 
         GarminPay.initialize("testClientId", expectedClientSecret);
@@ -50,7 +50,7 @@ public class InitializationTest {
     }
 
     @Test
-    public void cannotInitializeIfNull() {
+    void cannotInitializeIfNull() {
         // Assert that initializing with null clientId throws an exception
         assertThrows(IllegalArgumentException.class, () -> {
             GarminPay.initialize(null, "testClientSecret");
@@ -69,7 +69,7 @@ public class InitializationTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"", "   "})
-    public void cannotInitializeWithInvalidClientId(String invalidClientId) {
+    void cannotInitializeWithInvalidClientId(String invalidClientId) {
         // Assert that initializing with invalid clientId throws an exception
         assertThrows(IllegalArgumentException.class, () -> {
             GarminPay.initialize(invalidClientId, "testClientSecret");
@@ -78,7 +78,7 @@ public class InitializationTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"", "   "})
-    public void cannotInitializeWithInvalidClientSecret(String invalidClientSecret) {
+    void cannotInitializeWithInvalidClientSecret(String invalidClientSecret) {
         // Assert that initializing with invalid clientSecret throws an exception
         assertThrows(IllegalArgumentException.class, () -> {
             GarminPay.initialize("testClientId", invalidClientSecret);
