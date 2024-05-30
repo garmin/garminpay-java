@@ -1,11 +1,14 @@
 package com.garminpay;
 
+import lombok.Getter;
+
 /**
  * SDK class for handling clientId and clientSecret.
  */
 public class GarminPay {
-
+    @Getter
     private static String clientId;
+    @Getter
     private static String clientSecret;
 
     /**
@@ -24,13 +27,5 @@ public class GarminPay {
 
         GarminPay.clientId = clientId;
         GarminPay.clientSecret = clientSecret;
-    }
-
-    public static String getClientId() {
-        return clientId;
-    }
-
-    public static String getClientSecret() {
-        return clientSecret;
     }
 }

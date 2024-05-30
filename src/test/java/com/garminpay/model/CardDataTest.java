@@ -1,22 +1,12 @@
-package com.garminpay;
+package com.garminpay.model;
 
-import com.garminpay.model.Address;
-import com.garminpay.model.CardData;
+import com.garminpay.TestUtils;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class CardDataTest {
-    private static final Address TESTING_ADDRESS = Address.builder()
-        .name("Billing Address")
-        .street1("123 Main St")
-        .city("Anytown")
-        .state("CO")
-        .postalCode("12345")
-        .countryCode("US")
-        .build();
-
     @Test
     void canCreateCardDataObject() {
         CardData cardData = CardData.builder()
@@ -25,7 +15,7 @@ class CardDataTest {
             .expMonth(12)
             .expYear(2025)
             .name("John Doe")
-            .address(TESTING_ADDRESS)
+            .address(TestUtils.TESTING_ADDRESS)
             .build();
 
         assertNotNull(cardData);
