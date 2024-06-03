@@ -126,7 +126,6 @@
         <!-- See https://checkstyle.org/checks/coding/index.html -->
         <module name="EmptyStatement"/>
         <module name="IllegalInstantiation"/>
-        <module name="MagicNumber"/>
         <module name="MissingSwitchDefault"/>
         <module name="MultipleVariableDeclarations"/>
         <module name="SimplifyBooleanExpression"/>

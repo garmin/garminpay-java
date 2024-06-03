@@ -15,4 +15,14 @@ public class GarminPayApiException extends RuntimeException {
     public GarminPayApiException(String message, Throwable error) {
         super(message, error);
     }
+
+    /**
+     * Constructs a new GarminPayApiException with the specified detail message.
+     *
+     * @param message the detail message
+     */
+    public GarminPayApiException(String message) {
+        super(message);
+    }
+
 }
