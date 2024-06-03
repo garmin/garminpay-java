@@ -1,14 +1,22 @@
 package com.garminpay.proxy;
 
 import com.garminpay.BaseIT;
+import com.garminpay.exception.GarminPayApiException;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import org.junit.jupiter.api.Test;
 
 import java.net.http.HttpResponse;
+import java.util.Base64;
 
-
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 
 class GarminPayProxyIT extends BaseIT {
 
@@ -16,7 +24,7 @@ class GarminPayProxyIT extends BaseIT {
 
     @Test
     void canGetRootEndpoint200Response() {
-        WireMock.stubFor(get(urlEqualTo("/"))
+        WireMock.stubFor(get(urlPathEqualTo("/"))
             .willReturn(aResponse()
                 .withStatus(200)
                 .withHeader("Content-Type", "application/json")
@@ -30,7 +38,7 @@ class GarminPayProxyIT extends BaseIT {
 
     @Test
     void cannotGetRootEndpoint404Response() {
-        WireMock.stubFor(get(urlEqualTo("/"))
+        WireMock.stubFor(get(urlPathEqualTo("/"))
             .willReturn(aResponse()
                 .withStatus(404)
                 .withHeader("Content-Type", "application/json")
@@ -44,7 +52,7 @@ class GarminPayProxyIT extends BaseIT {
 
     @Test
     void cannotGetRootEndpoint502Response() {
-        WireMock.stubFor(get(urlEqualTo("/"))
+        WireMock.stubFor(get(urlPathEqualTo("/"))
             .willReturn(aResponse()
                 .withStatus(502)
                 .withHeader("Content-Type", "application/json")
@@ -54,5 +62,41 @@ class GarminPayProxyIT extends BaseIT {
 
         assertEquals(502, response.statusCode());
         assertEquals("{\"error\":\"Bad Gateway\"}", response.body());
+    }
+
+    @Test
+    void canGenerateOAuthAccessToken() {
+        String clientID = "testClientID";
+        String clientSecret = "testClientSecret";
+
+        stubFor(post(urlPathEqualTo("/oauth/token"))
+            .withHeader("Authorization", equalTo("Basic " + Base64.getEncoder().encodeToString((clientID + ":" + clientSecret).getBytes())))
+            .withHeader("Content-Type", equalTo("application/x-www-form-urlencoded"))
+            .willReturn(aResponse()
+                .withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody("{\"access_token\":\"testToken\"}")));
+
+        String token = garminPayProxy.generateOAuthAccessToken(clientID, clientSecret);
+        assertEquals("testToken", token);
+    }
+
+    @Test
+    void canHandle401ResponseFromGenerateOAuthAccessToken() {
+        String clientID = "test-client-id";
+        String clientSecret = "test-client-secret";
+
+
+        stubFor(post(urlPathEqualTo("/oauth/token"))
+            .withHeader("Authorization", equalTo("Basic " + Base64.getEncoder().encodeToString((clientID + ":" + clientSecret).getBytes())))
+            .withHeader("Content-Type", equalTo("application/x-www-form-urlencoded"))
+            .withRequestBody(equalTo("grant_type=client_credentials"))
+            .willReturn(aResponse()
+                .withStatus(401) // Unauthorized
+                .withHeader("Content-Type", "application/json")
+                .withBody("{\"error\":\"invalid_client\", \"error_description\":\"Client authentication failed\"}")));
+
+
+        assertThrows(GarminPayApiException.class, () -> garminPayProxy.generateOAuthAccessToken(clientID, clientSecret));
     }
 }
