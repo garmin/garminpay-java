@@ -2,6 +2,7 @@ package com.garminpay.proxy;
 
 import com.garminpay.BaseIT;
 import com.garminpay.exception.GarminPayApiException;
+import com.garminpay.model.HealthResponse;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import org.junit.jupiter.api.Test;
 
@@ -16,6 +17,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 
 class GarminPayProxyIT extends BaseIT {
@@ -62,6 +64,31 @@ class GarminPayProxyIT extends BaseIT {
 
         assertEquals(502, response.statusCode());
         assertEquals("{\"error\":\"Bad Gateway\"}", response.body());
+    }
+
+    @Test
+    void canGetHealthStatus(){
+        WireMock.stubFor(get(urlPathEqualTo("/health"))
+            .willReturn(aResponse()
+                .withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody("{\"status\":\"ok\"}")));
+
+        HealthResponse healthResponse = garminPayProxy.getHealthStatus();
+
+        assertNotNull(healthResponse, "Health response should not be null");
+        assertEquals("ok", healthResponse.getStatus(), "Health status should be 'ok'");
+    }
+
+    @Test
+    void canHandle502ResponseFromGetHealthStatus() {
+        WireMock.stubFor(get(urlPathEqualTo("/health"))
+            .willReturn(aResponse()
+                .withStatus(502)
+                .withHeader("Content-Type", "application/json")
+                .withBody("{\"error\":\"Bad Gateway\"}")));
+
+        assertThrows(GarminPayApiException.class, () -> garminPayProxy.getHealthStatus());
     }
 
     @Test

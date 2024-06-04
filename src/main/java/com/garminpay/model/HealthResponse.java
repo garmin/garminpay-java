@@ -6,15 +6,15 @@ import lombok.Builder;
 import lombok.Value;
 import lombok.extern.jackson.Jacksonized;
 
-
 @Value
 @Jacksonized
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Builder
-public class OAuthToken {
+public class HealthResponse {
     /**
-     * The access token issued by the authorization server.
+     * The status of the health check.
      */
-    @JsonProperty("access_token")
-    String accessToken;
+    @JsonProperty("status")
+    String status;
 }
+
