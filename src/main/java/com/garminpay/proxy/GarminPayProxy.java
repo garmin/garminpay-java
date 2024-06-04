@@ -1,6 +1,7 @@
 package com.garminpay.proxy;
 
 import com.garminpay.APIClient;
+import com.garminpay.model.HealthResponse;
 import com.garminpay.util.JsonBodyHandler;
 import com.garminpay.exception.GarminPayApiException;
 import com.garminpay.model.OAuthToken;
@@ -36,6 +37,19 @@ public class GarminPayProxy {
     public <T> HttpResponse<T> getRootEndpoint(HttpResponse.BodyHandler<T> bodyHandler) {
         String url = baseApiUrl + "/";
         return apiClient.get(url, bodyHandler);
+    }
+
+    /**
+     * Retrieves the health status of the Garmin Pay API.
+     *
+     * @return HealthResponse containing the health status of the Garmin Pay API.
+     */
+    public HealthResponse getHealthStatus() {
+        HttpResponse<HealthResponse> response = apiClient.get(baseApiUrl + "/health", new JsonBodyHandler<>(HealthResponse.class));
+        if (response.statusCode() != 200) {
+            throw new GarminPayApiException("Failed to get URL: " + baseApiUrl + "/health, status code: " + response.statusCode());
+        }
+        return response.body();
     }
 
     /**
