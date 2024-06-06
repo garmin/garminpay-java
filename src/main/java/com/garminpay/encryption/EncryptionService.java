@@ -9,68 +9,76 @@ import com.nimbusds.jose.JWEAlgorithm;
 import com.nimbusds.jose.JWEHeader;
 import com.nimbusds.jose.JWEObject;
 import com.nimbusds.jose.Payload;
-import com.nimbusds.jose.crypto.ECDHEncrypter;
-import com.nimbusds.jose.jwk.ECKey;
-import com.nimbusds.jose.jwk.JWK;
+import com.nimbusds.jose.crypto.AESEncrypter;
+import com.nimbusds.jose.crypto.bc.BouncyCastleProviderSingleton;
 
-import java.text.ParseException;
+import java.security.InvalidKeyException;
+import java.security.Key;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.NonNull;
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.binary.Hex;
 
-class EncryptionService {
-    private static final JWEAlgorithm ALGORITHM = JWEAlgorithm.ECDH_ES_A256KW;
+import javax.crypto.KeyAgreement;
+import javax.crypto.SecretKey;
+
+public class EncryptionService {
+    private static final JWEAlgorithm ALGORITHM = JWEAlgorithm.A256GCMKW;
     private final ObjectMapper mapper = new ObjectMapper();
+
+    /**
+     * Creates a shared secret or "key agreement" between the server public and client private keys.
+     *
+     * @param serverPublicKey  server public key represented as a String
+     * @param clientPrivateKey client private key represented as a String
+     * @return SecretKey object that represents a keyAgreement between the two keys
+     */
+    public SecretKey generateSharedSecret(@NonNull String serverPublicKey, @NonNull String clientPrivateKey) {
+        try {
+            Key publicKey = getPublicKey(serverPublicKey);
+            Key privateKey = getPrivateKey(clientPrivateKey);
+
+            KeyAgreement keyAgreement = KeyAgreement.getInstance("ECDH", BouncyCastleProviderSingleton.getInstance());
+            keyAgreement.init(privateKey);
+            keyAgreement.doPhase(publicKey, true);
+
+            return keyAgreement.generateSecret("AES");
+        } catch (NoSuchAlgorithmException | InvalidKeyException e) {
+            throw new GarminPayEncryptionException("Unable to generate a new key agreement");
+        }
+    }
 
     /**
      * Encrypts a CardData object for end to end payload encryption.
      *
-     * @param cardData The CardData for card registration
-     * @param publicKey server key for encrypting sensitive data
+     * @param cardData  The CardData for card registration
+     * @param secretKey secret key for encrypting sensitive data
      * @return string representing the JWE of cardData
      */
-    public String encryptCardData(@NonNull CardData cardData, @NonNull String publicKey) {
-        ECDHEncrypter encryptor = createECDHEncryptorFromPublicKey(publicKey);
-        String serializeCardData = serializeCardData(cardData);
-        Payload payload = new Payload(serializeCardData);
-        JWEObject jwe = createJWEObject(payload);
-
+    public String encryptCardData(@NonNull CardData cardData, @NonNull SecretKey secretKey) {
         try {
+            AESEncrypter encryptor = new AESEncrypter(secretKey);
+
+            String serializedCardData = serializeCardData(cardData);
+            Payload payload = new Payload(serializedCardData);
+
+            JWEObject jwe = new JWEObject(
+                new JWEHeader.Builder(ALGORITHM, EncryptionMethod.A256GCM)
+                    .contentType("application/jwe")
+                    .build(),
+                payload);
+
             jwe.encrypt(encryptor);
             return jwe.serialize();
         } catch (JOSEException e) {
-            throw new GarminPayEncryptionException("Unable to encrypt JWE object", e);
+            throw new GarminPayEncryptionException("Unable to encrypt card data with provided secret key");
         }
-    }
-
-    /**
-     * Creates an ECDHEncrypter instance using the provided public key.
-     *
-     * @param publicKey The public key string used to create the ECDHEncrypter.
-     * @return An ECDHEncrypter instance created from the provided public key.
-     */
-    private ECDHEncrypter createECDHEncryptorFromPublicKey(String publicKey) {
-        try {
-            JWK jwk = JWK.parse(publicKey);
-            ECKey ecKey = (ECKey) jwk;
-            return new ECDHEncrypter(ecKey);
-        } catch (JOSEException | ParseException e) {
-            throw new GarminPayEncryptionException("Invalid public key. Only ECC keys accepted.", e);
-        }
-    }
-
-    /**
-     * Creates a JWEObject with the given payload.
-     *
-     * @param payload The payload to be encapsulated in the JWEObject.
-     * @return A JWEObject encapsulating the provided payload.
-     */
-    private JWEObject createJWEObject(Payload payload) {
-        return new JWEObject(
-            new JWEHeader.Builder(ALGORITHM, EncryptionMethod.A256GCM)
-                .contentType("application/jwe")
-                .build(),
-            payload);
     }
 
     /**
@@ -81,10 +89,44 @@ class EncryptionService {
      */
     private String serializeCardData(CardData cardData) {
         try {
-            // Serialize CardData object to JSON
+            // map and serialize CardData object
             return mapper.writeValueAsString(cardData);
         } catch (JsonProcessingException e) {
-            throw new GarminPayEncryptionException("Could not map card data to JSON", e);
+            throw new GarminPayEncryptionException("Could not map or serialize card data");
+        }
+    }
+
+    /**
+     * Creates a Java Security key from a character array.
+     *
+     * @param publicKey public key represented by a character array
+     * @return Java Security Key
+     */
+    private Key getPublicKey(String publicKey) {
+        try {
+            KeyFactory kf = KeyFactory.getInstance("EC", BouncyCastleProviderSingleton.getInstance());
+
+            X509EncodedKeySpec keySpec = new X509EncodedKeySpec(Hex.decodeHex(publicKey.toCharArray()));
+            return kf.generatePublic(keySpec);
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException | DecoderException e) {
+            throw new GarminPayEncryptionException("Unable to decrypt public key");
+        }
+    }
+
+    /**
+     * Creates a Java Security key from a character array.
+     *
+     * @param privateKey private key represented by a character array
+     * @return Java Security Key
+     */
+    private Key getPrivateKey(String privateKey) {
+        try {
+            KeyFactory kf = KeyFactory.getInstance("EC", BouncyCastleProviderSingleton.getInstance());
+
+            PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(Hex.decodeHex(privateKey.toCharArray()));
+            return kf.generatePrivate(keySpec);
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException | DecoderException e) {
+            throw new GarminPayEncryptionException("Unable to decrypt private key");
         }
     }
 }

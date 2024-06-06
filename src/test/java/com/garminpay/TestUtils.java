@@ -7,6 +7,7 @@ import com.nimbusds.jose.jwk.Curve;
 import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jose.jwk.gen.ECKeyGenerator;
 import lombok.SneakyThrows;
+import org.apache.commons.codec.binary.Hex;
 
 public class TestUtils {
     public static final Address TESTING_ADDRESS = Address.builder()
@@ -27,12 +28,22 @@ public class TestUtils {
         .address(TESTING_ADDRESS)
         .build();
 
-    public static final ECKey TESTING_ECC_KEY = generateECKey();
+    public static final String TESTING_ENCODED_PUBLIC_ECC_KEY;
+
+    public static final String TESTING_ENCODED_PRIVATE_ECC_KEY;
+
+    static {
+        try {
+            ECKey testingECCkey = generateECKey();
+            TESTING_ENCODED_PUBLIC_ECC_KEY = String.valueOf(Hex.encodeHex(testingECCkey.toPublicKey().getEncoded()));
+            TESTING_ENCODED_PRIVATE_ECC_KEY = String.valueOf(Hex.encodeHex(testingECCkey.toPrivateKey().getEncoded()));
+        } catch (JOSEException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     @SneakyThrows(JOSEException.class)
     private static ECKey generateECKey() {
         return new ECKeyGenerator(Curve.P_256).generate();
     }
-
-    public static final String TESTING_PUBLIC_ECC_KEY_STRING = TESTING_ECC_KEY.toPublicJWK().toJSONString();
 }
