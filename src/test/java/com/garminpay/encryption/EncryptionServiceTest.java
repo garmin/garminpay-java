@@ -1,45 +1,36 @@
 package com.garminpay.encryption;
 
 import com.garminpay.TestUtils;
-import com.garminpay.exception.GarminPayEncryptionException;
 import com.nimbusds.jwt.EncryptedJWT;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import javax.crypto.SecretKey;
+
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class EncryptionServiceTest {
-    private final String mockPublicECKey = TestUtils.TESTING_PUBLIC_ECC_KEY_STRING;
+    private final EncryptionService service = new EncryptionService();
+    private final SecretKey secretKey = service.generateSharedSecret(TestUtils.TESTING_ENCODED_PUBLIC_ECC_KEY, TestUtils.TESTING_ENCODED_PRIVATE_ECC_KEY);
 
     @Test
-    void canEncryptCardDataWithEC() {
-        EncryptionService service = new EncryptionService();
-        String encryptedCardData = service.encryptCardData(TestUtils.TESTING_CARD_DATA, mockPublicECKey);
+    void canEncryptCardDataWithSecretKey() {
+        String encryptedCardData = service.encryptCardData(TestUtils.TESTING_CARD_DATA, secretKey);
 
+        assertNotNull(encryptedCardData);
         assertDoesNotThrow(() -> {
             EncryptedJWT.parse(encryptedCardData);
         });
     }
 
     @Test
-    void cannotEncryptCardDataWithInvalidKey() {
-        EncryptionService service = new EncryptionService();
-        String mockInvalidPublicKey = "Invalid Public Key";
-
-        assertThrows(GarminPayEncryptionException.class, () -> service.encryptCardData(TestUtils.TESTING_CARD_DATA, mockInvalidPublicKey));
-    }
-
-    @Test
     void cannotEncryptCardDataWithNullKey() {
-        EncryptionService service = new EncryptionService();
-
         assertThrows(IllegalArgumentException.class, () -> service.encryptCardData(TestUtils.TESTING_CARD_DATA, null));
     }
 
     @Test
     void cannotEncryptCardDataWithNullCard() {
-        EncryptionService service = new EncryptionService();
-
-        assertThrows(IllegalArgumentException.class, () -> service.encryptCardData(null, mockPublicECKey));
+        assertThrows(IllegalArgumentException.class, () -> service.encryptCardData(null, secretKey));
     }
 }

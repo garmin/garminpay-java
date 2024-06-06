@@ -1,16 +1,22 @@
 package com.garminpay.proxy;
 
 import com.garminpay.APIClient;
+import com.garminpay.TestUtils;
 import com.garminpay.exception.GarminPayApiException;
+import com.garminpay.exception.GarminPayEncryptionException;
+import com.garminpay.model.KeyExchangeDTO;
+import com.garminpay.model.request.CreateECCEncryptionKeyRequest;
+import com.garminpay.model.response.OAuthToken;
 import com.garminpay.model.HealthResponse;
-import com.garminpay.model.OAuthToken;
 import com.garminpay.util.JsonBodyHandler;
+import com.garminpay.model.response.ECCEncryptionKey;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
 import java.net.http.HttpResponse;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -27,16 +33,19 @@ class GarminPayProxyTest {
     private APIClient apiClientMock;
     private HttpResponse<String> httpResponseMock;
     private HttpResponse<OAuthToken> httpOAuthTokenMock;
+    private HttpResponse<ECCEncryptionKey> httpECCEncryptionKeyMock;
     private HttpResponse<HealthResponse> httpHealthResponseMock;
 
     private static final String baseApiUrl = "https://api.qa.fitpay.ninja";
     private static final String authUrl = "https://auth.qa.fitpay.ninja/oauth/token";
+    private static final String keyExchangeUrl = baseApiUrl + "/config/encryptionKeys";
 
     @BeforeEach
     void setUp() {
         apiClientMock = mock(APIClient.class);
         httpResponseMock = mock(HttpResponse.class);
         httpOAuthTokenMock = mock(HttpResponse.class);
+        httpECCEncryptionKeyMock = mock(HttpResponse.class);
         httpHealthResponseMock = mock(HttpResponse.class);
         garminPayProxy = new GarminPayProxy();
 
@@ -140,5 +149,40 @@ class GarminPayProxyTest {
         });
 
         assertEquals("Failed to get OAuth token", exception.getMessage());
+    }
+
+    @Test
+    void canExchangeKeys() {
+        String mockOauthToken = "mockAccessToken";
+        String mockServerKeyId = UUID.randomUUID().toString();
+        ECCEncryptionKey mockKey = ECCEncryptionKey.builder()
+            .serverPublicKey(TestUtils.TESTING_ENCODED_PUBLIC_ECC_KEY)
+            .keyId(mockServerKeyId)
+            .active(true)
+            .build();
+
+        when(httpECCEncryptionKeyMock.statusCode()).thenReturn(201);
+        when(httpECCEncryptionKeyMock.body()).thenReturn(mockKey);
+        when(apiClientMock.post(eq(keyExchangeUrl), any(), any(), any(JsonBodyHandler.class))).thenReturn(httpECCEncryptionKeyMock);
+
+        ECCEncryptionKey eccEncryptionKey = garminPayProxy.exchangeKeys(mockOauthToken, TestUtils.TESTING_ENCODED_PUBLIC_ECC_KEY);
+
+        assertNotNull(eccEncryptionKey);
+        assertEquals(eccEncryptionKey, mockKey);
+        verify(apiClientMock, times(1)).post(eq(keyExchangeUrl), any(), any(), any());
+    }
+
+    @Test
+    void canHandleNullResponseToExchangeKeys() {
+        String mockOauthToken = "mockAccessToken";
+        ECCEncryptionKey mockKey = ECCEncryptionKey.builder().build();
+
+        when(httpECCEncryptionKeyMock.statusCode()).thenReturn(400);
+        when(httpECCEncryptionKeyMock.body()).thenReturn(mockKey);
+        when(apiClientMock.post(eq(keyExchangeUrl), eq(CreateECCEncryptionKeyRequest.class), any(), any(JsonBodyHandler.class))).thenReturn(httpECCEncryptionKeyMock);
+
+        assertThrows(GarminPayEncryptionException.class, () -> {
+            garminPayProxy.exchangeKeys(mockOauthToken, TestUtils.TESTING_ENCODED_PUBLIC_ECC_KEY);
+        });
     }
 }

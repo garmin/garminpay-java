@@ -1,13 +1,22 @@
 package com.garminpay.proxy;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.garminpay.BaseIT;
+import com.garminpay.TestUtils;
 import com.garminpay.exception.GarminPayApiException;
 import com.garminpay.model.HealthResponse;
+import com.garminpay.model.KeyExchangeDTO;
+import com.garminpay.model.response.ECCEncryptionKey;
 import com.github.tomakehurst.wiremock.client.WireMock;
+import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
 
 import java.net.http.HttpResponse;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
@@ -16,13 +25,14 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
 class GarminPayProxyIT extends BaseIT {
 
     private final GarminPayProxy garminPayProxy = new GarminPayProxy();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
     void canGetRootEndpoint200Response() {
@@ -125,5 +135,50 @@ class GarminPayProxyIT extends BaseIT {
 
 
         assertThrows(GarminPayApiException.class, () -> garminPayProxy.generateOAuthAccessToken(clientID, clientSecret));
+    }
+
+    @Test
+    @SneakyThrows(JsonProcessingException.class)
+    void canCompleteKeyExchange() {
+        String mockOauthToken = "mockAccessToken";
+
+        ECCEncryptionKey mockKeyResponse = ECCEncryptionKey.builder()
+            .keyId(UUID.randomUUID().toString())
+            .active(true)
+            .serverPublicKey(TestUtils.TESTING_ENCODED_PUBLIC_ECC_KEY)
+            .build();
+
+        String responseBody = objectMapper.writeValueAsString(mockKeyResponse);
+
+        stubFor(post(urlPathEqualTo("/config/encryptionKeys"))
+            .willReturn(aResponse()
+                .withStatus(201)
+                .withHeader("Content-Type", "application/json")
+                .withBody(responseBody)));
+
+        ECCEncryptionKey eccEncryptionKeyResponse = garminPayProxy.exchangeKeys(mockOauthToken, TestUtils.TESTING_ENCODED_PUBLIC_ECC_KEY);
+        assertNotNull(eccEncryptionKeyResponse);
+    }
+
+    @Test
+    @SneakyThrows(JsonProcessingException.class)
+    void canHandle400ResponseFromKeyExchange() {
+        String mockOauthToken = "mockAccessToken";
+        String errorMessage = "Simulated error message from key exchange endpoint";
+
+        Map<String, String> body = new HashMap<>();
+        body.put("error", errorMessage);
+
+        String responseBody = objectMapper.writeValueAsString(body);
+
+        stubFor(post(urlPathEqualTo("/config/encryptionKeys"))
+            .willReturn(aResponse()
+                .withStatus(400)
+                .withHeader("Content-Type", "application/json")
+                .withBody(responseBody)));
+
+        assertThrows(GarminPayApiException.class, () -> {
+            garminPayProxy.exchangeKeys(mockOauthToken, TestUtils.TESTING_ENCODED_PUBLIC_ECC_KEY);
+        });
     }
 }

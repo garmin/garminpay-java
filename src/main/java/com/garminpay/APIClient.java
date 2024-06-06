@@ -78,10 +78,12 @@ public class APIClient {
 
         try {
             HttpResponse<T> response = httpClient.send(request, bodyHandler);
-            if (response.statusCode() != 200) {
-                throw new GarminPayApiException("Failed to post to URL: " + url + ", status code: " + response.statusCode());
+            if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                return response;
             }
-            return response;
+            throw new GarminPayApiException(
+                "Failed to post to URL: " + url + ", status code: " + response.statusCode()
+            );
         } catch (IOException | InterruptedException e) {
             throw new GarminPayApiException("Failed to post to URL: " + url, e);
         }
