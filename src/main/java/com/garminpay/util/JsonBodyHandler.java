@@ -5,7 +5,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.garminpay.exception.GarminPayApiException;
+import com.garminpay.exception.GarminPaySDKException;
 
 /**
  * A generic HTTP response body handler that maps the response body to a specified type.
@@ -14,7 +14,7 @@ import com.garminpay.exception.GarminPayApiException;
  */
 public class JsonBodyHandler<T> implements HttpResponse.BodyHandler<T> {
     private final Class<T> type;
-    ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
      * Constructs a new JsonBodyHandler for the specified type.
@@ -40,7 +40,7 @@ public class JsonBodyHandler<T> implements HttpResponse.BodyHandler<T> {
                 try {
                     return objectMapper.readValue(body, type);
                 } catch (IOException e) {
-                    throw new GarminPayApiException("Failed to parse response", e);
+                    throw new GarminPaySDKException("Failed to parse response", e);
                 }
             }
         );

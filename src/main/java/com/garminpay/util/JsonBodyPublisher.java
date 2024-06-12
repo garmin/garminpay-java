@@ -1,6 +1,7 @@
 package com.garminpay.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.garminpay.exception.GarminPaySDKException;
 
 import java.net.http.HttpRequest;
 import java.nio.charset.StandardCharsets;
@@ -23,7 +24,7 @@ public class JsonBodyPublisher {
             String json = OBJECT_MAPPER.writeValueAsString(object);
             return HttpRequest.BodyPublishers.ofString(json, StandardCharsets.UTF_8);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to serialize object to JSON", e);
+            throw new GarminPaySDKException("Failed to serialize object to JSON", e);
         }
     }
 }

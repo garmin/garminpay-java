@@ -3,13 +3,13 @@ package com.garminpay.proxy;
 import com.garminpay.APIClient;
 import com.garminpay.TestUtils;
 import com.garminpay.exception.GarminPayApiException;
-import com.garminpay.exception.GarminPayEncryptionException;
-import com.garminpay.model.KeyExchangeDTO;
+import com.garminpay.exception.GarminPaySDKException;
 import com.garminpay.model.request.CreateECCEncryptionKeyRequest;
-import com.garminpay.model.response.OAuthToken;
-import com.garminpay.model.HealthResponse;
+import com.garminpay.model.response.OAuthTokenResponse;
+import com.garminpay.model.response.HealthResponse;
+import com.garminpay.model.response.RootResponse;
 import com.garminpay.util.JsonBodyHandler;
-import com.garminpay.model.response.ECCEncryptionKey;
+import com.garminpay.model.response.ECCEncryptionKeyResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -31,9 +31,9 @@ import static org.mockito.Mockito.when;
 class GarminPayProxyTest {
     private GarminPayProxy garminPayProxy;
     private APIClient apiClientMock;
-    private HttpResponse<String> httpResponseMock;
-    private HttpResponse<OAuthToken> httpOAuthTokenMock;
-    private HttpResponse<ECCEncryptionKey> httpECCEncryptionKeyMock;
+    private HttpResponse<RootResponse> httpRootResponseMock;
+    private HttpResponse<OAuthTokenResponse> httpOAuthTokenMock;
+    private HttpResponse<ECCEncryptionKeyResponse> httpECCEncryptionKeyMock;
     private HttpResponse<HealthResponse> httpHealthResponseMock;
 
     private static final String baseApiUrl = "https://api.qa.fitpay.ninja";
@@ -43,7 +43,7 @@ class GarminPayProxyTest {
     @BeforeEach
     void setUp() {
         apiClientMock = mock(APIClient.class);
-        httpResponseMock = mock(HttpResponse.class);
+        httpRootResponseMock = mock(HttpResponse.class);
         httpOAuthTokenMock = mock(HttpResponse.class);
         httpECCEncryptionKeyMock = mock(HttpResponse.class);
         httpHealthResponseMock = mock(HttpResponse.class);
@@ -54,65 +54,114 @@ class GarminPayProxyTest {
             apiClientField.setAccessible(true);
             apiClientField.set(garminPayProxy, apiClientMock);
         } catch (NoSuchFieldException | IllegalAccessException e) {
-            throw new GarminPayApiException("Could not set mock APIClient", e);
+            throw new GarminPaySDKException("Could not set mock APIClient", e);
         }
     }
 
     @Test
     void canGetRootEndpoint() {
-        when(apiClientMock.get(eq(baseApiUrl + "/"), any(HttpResponse.BodyHandler.class))).thenReturn(httpResponseMock);
-        when(httpResponseMock.statusCode()).thenReturn(200);
-        when(httpResponseMock.body()).thenReturn("Success");
+        Map<String, RootResponse.HalLink> mockLinks = Map.of(
+            "self", RootResponse.HalLink.builder().href("https://api.qa.fitpay.ninja/").build()
+        );
 
-        HttpResponse<String> response = garminPayProxy.getRootEndpoint(HttpResponse.BodyHandlers.ofString());
+        RootResponse mockRootResponse = RootResponse.builder()
+            .links(mockLinks)
+            .build();
 
-        assertNotNull(response, "Response should not be null");
-        assertEquals(200, response.statusCode(), "Response status code should be 200");
-        assertEquals("Success", response.body(), "Response body should be 'Success'");
-        verify(apiClientMock, times(1)).get(eq(baseApiUrl + "/"), any(HttpResponse.BodyHandler.class));
+        when(apiClientMock.get(eq(baseApiUrl + "/"), any(JsonBodyHandler.class))).thenReturn(httpRootResponseMock);
+        when(httpRootResponseMock.statusCode()).thenReturn(200);
+        when(httpRootResponseMock.body()).thenReturn(mockRootResponse);
+
+        RootResponse response = garminPayProxy.getRootEndpoint();
+
+        assertNotNull(response);
+        assertNotNull(response.getLinks().get("self"));
+        assertEquals("https://api.qa.fitpay.ninja/", response.getLinks().get("self").getHref());
+        verify(apiClientMock, times(1)).get(eq(baseApiUrl + "/"), any(JsonBodyHandler.class));
+    }
+
+
+    @Test
+    void canHandle404ResponseGetRootEndpoint() {
+        RootResponse mockRootResponse = RootResponse.builder()
+            .path("/")
+            .status(404)
+            .message("Not Found")
+            .build();
+
+        when(httpRootResponseMock.statusCode()).thenReturn(404);
+        when(httpRootResponseMock.body()).thenReturn(mockRootResponse);
+        when(apiClientMock.get(eq(baseApiUrl + "/"), any(JsonBodyHandler.class))).thenReturn(httpRootResponseMock);
+
+        GarminPayApiException exception = assertThrows(GarminPayApiException.class, () -> {
+            garminPayProxy.getRootEndpoint();
+        });
+
+        assertEquals("/", exception.getPath());
+        assertEquals(404, exception.getStatus());
+        assertEquals("Not Found", exception.getMessage());
     }
 
     @Test
-    void canHandleGarminPayApiException() {
-        when(apiClientMock.get(eq(baseApiUrl + "/"), any(HttpResponse.BodyHandler.class)))
-            .thenThrow(new GarminPayApiException("Error", new Exception()));
+    void canHandle502ResponseGetRootEndpoint() {
+        RootResponse mockRootResponse = RootResponse.builder()
+            .path("/")
+            .status(502)
+            .message("Bad Gateway")
+            .build();
+
+        when(httpRootResponseMock.statusCode()).thenReturn(502);
+        when(httpRootResponseMock.body()).thenReturn(mockRootResponse);
+        when(apiClientMock.get(eq(baseApiUrl + "/"), any(JsonBodyHandler.class))).thenReturn(httpRootResponseMock);
 
         GarminPayApiException exception = assertThrows(GarminPayApiException.class, () -> {
-            garminPayProxy.getRootEndpoint(HttpResponse.BodyHandlers.ofString());
+            garminPayProxy.getRootEndpoint();
         });
 
-        assertEquals("Error", exception.getMessage());
+        assertEquals("/", exception.getPath());
+        assertEquals(502, exception.getStatus());
+        assertEquals("Bad Gateway", exception.getMessage());
     }
 
     @Test
     void canGetHealthStatus() {
-        HealthResponse mockHealthResponse = HealthResponse.builder()
-            .status("ok")
+        HealthResponse mockHealth = HealthResponse.builder()
+            .healthStatus("OK")
             .build();
 
         when(apiClientMock.get(eq(baseApiUrl + "/health"), any(JsonBodyHandler.class))).thenReturn(httpHealthResponseMock);
         when(httpHealthResponseMock.statusCode()).thenReturn(200);
-        when(httpHealthResponseMock.body()).thenReturn(mockHealthResponse);
+        when(httpHealthResponseMock.body()).thenReturn(mockHealth);
 
-        HealthResponse healthResponse = garminPayProxy.getHealthStatus();
+        HealthResponse health = garminPayProxy.getHealthStatus();
 
-        assertNotNull(healthResponse, "Health response should not be null");
-        assertEquals("ok", healthResponse.getStatus(), "Health status should be 'ok'");
+        assertNotNull(health, "Health response should not be null");
+        assertEquals("OK", health.getHealthStatus());
         verify(apiClientMock, times(1)).get(eq(baseApiUrl + "/health"), any(JsonBodyHandler.class));
     }
 
     @Test
     void canHandle502ResponseHealthStatus() {
+        HealthResponse mockHealthResponse = HealthResponse.builder()
+            .path("/health")
+            .status(502)
+            .message("Bad Gateway")
+            .build();
+
         when(httpHealthResponseMock.statusCode()).thenReturn(502);
+        when(httpHealthResponseMock.body()).thenReturn(mockHealthResponse);
         when(apiClientMock.get(eq(baseApiUrl + "/health"), any(JsonBodyHandler.class))).thenReturn(httpHealthResponseMock);
+
         GarminPayApiException exception = assertThrows(GarminPayApiException.class, () -> garminPayProxy.getHealthStatus());
 
-        assertEquals("Failed to get URL: " + baseApiUrl + "/health, status code: 502", exception.getMessage());
+        assertEquals("/health", exception.getPath());
+        assertEquals(502, exception.getStatus());
+        assertEquals("Bad Gateway", exception.getMessage());
     }
 
     @Test
-    void canGenerateOAuthAccessToken() {
-        OAuthToken mockToken = OAuthToken.builder()
+    void canGetOAuthAccessToken() {
+        OAuthTokenResponse mockToken = OAuthTokenResponse.builder()
             .accessToken("mockAccessToken")
             .build();
 
@@ -120,7 +169,7 @@ class GarminPayProxyTest {
         when(httpOAuthTokenMock.body()).thenReturn(mockToken);
         when(apiClientMock.post(eq(authUrl), eq(Map.of("grant_type", "client_credentials")), any(Map.class), any(JsonBodyHandler.class))).thenReturn(httpOAuthTokenMock);
 
-        String accessToken = garminPayProxy.generateOAuthAccessToken("clientId", "clientSecret");
+        String accessToken = garminPayProxy.getOAuthAccessToken("clientId", "clientSecret");
 
         assertNotNull(accessToken, "Access token should not be null");
         assertEquals("mockAccessToken", accessToken, "Access token should be 'mockAccessToken'");
@@ -129,23 +178,34 @@ class GarminPayProxyTest {
 
     @Test
     void canHandle401FromGenerateOAuthToken() {
+        OAuthTokenResponse mockOAuthTokenResponse = OAuthTokenResponse.builder()
+            .path("/oauth/token")
+            .status(401)
+            .message("Unauthorized")
+            .build();
+
         when(httpOAuthTokenMock.statusCode()).thenReturn(401);
+        when(httpOAuthTokenMock.body()).thenReturn(mockOAuthTokenResponse);
         when(apiClientMock.post(eq(authUrl), eq(Map.of("grant_type", "client_credentials")), any(Map.class), any(JsonBodyHandler.class))).thenReturn(httpOAuthTokenMock);
 
         GarminPayApiException exception = assertThrows(GarminPayApiException.class, () -> {
-            garminPayProxy.generateOAuthAccessToken("clientId", "clientSecret");
+            garminPayProxy.getOAuthAccessToken("clientId", "clientSecret");
         });
 
-        assertEquals("Failed to get OAuth token, status code: 401", exception.getMessage());
+        assertEquals(401, exception.getStatus());
+        assertEquals("/oauth/token", exception.getPath());
+        assertEquals("Unauthorized", exception.getMessage());
     }
 
     @Test
     void canHandleGenerateOAuthTokenException() {
         when(apiClientMock.post(eq(authUrl), eq(Map.of("grant_type", "client_credentials")), any(Map.class), any(JsonBodyHandler.class)))
-            .thenThrow(new GarminPayApiException("Failed to get OAuth token", new Exception()));
+            .thenThrow(new GarminPayApiException(
+                null, 0, null, null, null, null, null,
+                "Failed to get OAuth token", new Exception()));
 
         GarminPayApiException exception = assertThrows(GarminPayApiException.class, () -> {
-            garminPayProxy.generateOAuthAccessToken("clientId", "clientSecret");
+            garminPayProxy.getOAuthAccessToken("clientId", "clientSecret");
         });
 
         assertEquals("Failed to get OAuth token", exception.getMessage());
@@ -155,7 +215,7 @@ class GarminPayProxyTest {
     void canExchangeKeys() {
         String mockOauthToken = "mockAccessToken";
         String mockServerKeyId = UUID.randomUUID().toString();
-        ECCEncryptionKey mockKey = ECCEncryptionKey.builder()
+        ECCEncryptionKeyResponse mockKey = ECCEncryptionKeyResponse.builder()
             .serverPublicKey(TestUtils.TESTING_ENCODED_PUBLIC_ECC_KEY)
             .keyId(mockServerKeyId)
             .active(true)
@@ -165,24 +225,32 @@ class GarminPayProxyTest {
         when(httpECCEncryptionKeyMock.body()).thenReturn(mockKey);
         when(apiClientMock.post(eq(keyExchangeUrl), any(), any(), any(JsonBodyHandler.class))).thenReturn(httpECCEncryptionKeyMock);
 
-        ECCEncryptionKey eccEncryptionKey = garminPayProxy.exchangeKeys(mockOauthToken, TestUtils.TESTING_ENCODED_PUBLIC_ECC_KEY);
+        ECCEncryptionKeyResponse eccEncryptionKeyResponse = garminPayProxy.exchangeKeys(mockOauthToken, TestUtils.TESTING_ENCODED_PUBLIC_ECC_KEY);
 
-        assertNotNull(eccEncryptionKey);
-        assertEquals(eccEncryptionKey, mockKey);
+        assertNotNull(eccEncryptionKeyResponse);
+        assertEquals(eccEncryptionKeyResponse, mockKey);
         verify(apiClientMock, times(1)).post(eq(keyExchangeUrl), any(), any(), any());
     }
 
     @Test
     void canHandleNullResponseToExchangeKeys() {
         String mockOauthToken = "mockAccessToken";
-        ECCEncryptionKey mockKey = ECCEncryptionKey.builder().build();
+        ECCEncryptionKeyResponse mockKey = ECCEncryptionKeyResponse.builder()
+            .path("/config/encryptionKeys")
+            .status(400)
+            .message("Bad Request")
+            .build();
 
         when(httpECCEncryptionKeyMock.statusCode()).thenReturn(400);
         when(httpECCEncryptionKeyMock.body()).thenReturn(mockKey);
-        when(apiClientMock.post(eq(keyExchangeUrl), eq(CreateECCEncryptionKeyRequest.class), any(), any(JsonBodyHandler.class))).thenReturn(httpECCEncryptionKeyMock);
+        when(apiClientMock.post(eq(keyExchangeUrl), any(CreateECCEncryptionKeyRequest.class), any(Map.class), any(JsonBodyHandler.class))).thenReturn(httpECCEncryptionKeyMock);
 
-        assertThrows(GarminPayEncryptionException.class, () -> {
+        GarminPayApiException exception = assertThrows(GarminPayApiException.class, () -> {
             garminPayProxy.exchangeKeys(mockOauthToken, TestUtils.TESTING_ENCODED_PUBLIC_ECC_KEY);
         });
+
+        assertEquals(400, exception.getStatus());
+        assertEquals("/config/encryptionKeys", exception.getPath());
+        assertEquals("Bad Request", exception.getMessage());
     }
 }
