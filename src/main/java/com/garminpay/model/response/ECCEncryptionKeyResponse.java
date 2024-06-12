@@ -1,15 +1,17 @@
 package com.garminpay.model.response;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Value;
+import lombok.experimental.SuperBuilder;
 import lombok.extern.jackson.Jacksonized;
 
 @Value
+@EqualsAndHashCode(callSuper = true)
 @Jacksonized
-@Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class ECCEncryptionKey {
+@SuperBuilder
+public class ECCEncryptionKeyResponse extends ErrorResponse {
     String keyId;
     String serverPublicKey;
     boolean active;

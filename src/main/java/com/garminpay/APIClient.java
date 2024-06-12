@@ -1,6 +1,7 @@
 package com.garminpay;
 
-import com.garminpay.exception.GarminPayApiException;
+import com.garminpay.exception.GarminPaySDKException;
+import com.garminpay.util.FormBodyHandler;
 import com.garminpay.util.JsonBodyPublisher;
 
 import java.io.IOException;
@@ -52,7 +53,7 @@ public class APIClient {
         try {
             return httpClient.send(request, bodyHandler);
         } catch (IOException | InterruptedException e) {
-            throw new GarminPayApiException("Failed to get URL: " + url, e);
+            throw new GarminPaySDKException("Failed to get URL: " + url, e);
         }
     }
 
@@ -68,24 +69,26 @@ public class APIClient {
      */
     public <T> HttpResponse<T> post(String url, Object body, Map<String, String> headers,
                                     HttpResponse.BodyHandler<T> bodyHandler) {
+        HttpRequest.BodyPublisher bodyPublisher;
+        if ("application/x-www-form-urlencoded".equals(headers.get("Content-Type")) && body instanceof Map) {
+            bodyPublisher = FormBodyHandler.ofFormData(
+                (Map<Object, Object>) body);
+        } else {
+            bodyPublisher = JsonBodyPublisher.ofObject(body);
+        }
+
         HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
             .uri(URI.create(url))
-            .POST(JsonBodyPublisher.ofObject(body));
+            .POST(bodyPublisher);
 
         headers.forEach(requestBuilder::header);
 
         HttpRequest request = requestBuilder.build();
 
         try {
-            HttpResponse<T> response = httpClient.send(request, bodyHandler);
-            if (response.statusCode() >= 200 && response.statusCode() < 300) {
-                return response;
-            }
-            throw new GarminPayApiException(
-                "Failed to post to URL: " + url + ", status code: " + response.statusCode()
-            );
+            return httpClient.send(request, bodyHandler);
         } catch (IOException | InterruptedException e) {
-            throw new GarminPayApiException("Failed to post to URL: " + url, e);
+            throw new GarminPaySDKException("Failed to post to URL: " + url, e);
         }
     }
 }

@@ -1,6 +1,6 @@
 package com.garminpay;
 
-import com.garminpay.exception.GarminPayApiException;
+import com.garminpay.exception.GarminPaySDKException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -70,7 +70,7 @@ class APIClientTest {
         when(httpClientMock.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
             .thenThrow(new IOException("IO Error"));
 
-        GarminPayApiException exception = assertThrows(GarminPayApiException.class, () -> {
+        GarminPaySDKException exception = assertThrows(GarminPaySDKException.class, () -> {
             apiClient.get(baseApiUrl, HttpResponse.BodyHandlers.ofString());
         });
 
@@ -82,7 +82,7 @@ class APIClientTest {
         when(httpClientMock.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
             .thenThrow(new InterruptedException("Interrupted Error"));
 
-        GarminPayApiException exception = assertThrows(GarminPayApiException.class, () -> {
+        GarminPaySDKException exception = assertThrows(GarminPaySDKException.class, () -> {
             apiClient.get(baseApiUrl, HttpResponse.BodyHandlers.ofString());
         });
 
@@ -113,7 +113,7 @@ class APIClientTest {
 
         Map<String, String> headers = Map.of("Content-Type", "application/json");
 
-        GarminPayApiException exception = assertThrows(GarminPayApiException.class, () -> {
+        GarminPaySDKException exception = assertThrows(GarminPaySDKException.class, () -> {
             apiClient.post(authUrl, "grant_type=client_credentials", headers, HttpResponse.BodyHandlers.ofString());
         });
 
@@ -127,7 +127,7 @@ class APIClientTest {
 
         Map<String, String> headers = Map.of("Content-Type", "application/json");
 
-        GarminPayApiException exception = assertThrows(GarminPayApiException.class, () -> {
+        GarminPaySDKException exception = assertThrows(GarminPaySDKException.class, () -> {
             apiClient.post(authUrl, "grant_type=client_credentials", headers, HttpResponse.BodyHandlers.ofString());
         });
 
