@@ -1,5 +1,6 @@
 package com.garminpay;
 
+import com.garminpay.model.GarminPayCardData;
 import lombok.Getter;
 
 /**
@@ -27,5 +28,16 @@ public class GarminPay {
 
         GarminPay.clientId = clientId;
         GarminPay.clientSecret = clientSecret;
+    }
+
+    /**
+     * Takes a card data object and registers it with the Garmin Pay platform.
+     *
+     * @param garminCardDataObject The card data object to register
+     * @return Deeplink url to GCM app
+     */
+    public static String registerCard(GarminPayCardData garminCardDataObject) {
+        GarminPayService garminPayService = new GarminPayService();
+        return garminPayService.registerCard(garminCardDataObject, clientId, clientSecret);
     }
 }

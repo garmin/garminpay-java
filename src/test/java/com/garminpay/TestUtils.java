@@ -1,13 +1,15 @@
 package com.garminpay;
 
 import com.garminpay.model.Address;
-import com.garminpay.model.CardData;
+import com.garminpay.model.GarminPayCardData;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.jwk.Curve;
 import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jose.jwk.gen.ECKeyGenerator;
 import lombok.SneakyThrows;
 import org.apache.commons.codec.binary.Hex;
+
+import java.util.UUID;
 
 public class TestUtils {
     public static final Address TESTING_ADDRESS = Address.builder()
@@ -19,14 +21,16 @@ public class TestUtils {
         .countryCode("US")
         .build();
 
-    public static final CardData TESTING_CARD_DATA = CardData.builder()
-        .pan("1234567890123456")
+    public static final GarminPayCardData TESTING_CARD_DATA = GarminPayCardData.builder()
+        .pan("9999449825552964")
         .cvv("123")
         .expMonth(12)
         .expYear(2025)
         .name("John Doe")
         .address(TESTING_ADDRESS)
         .build();
+
+    public static final String TESTING_KEY_ID = UUID.randomUUID().toString();
 
     public static final String TESTING_ENCODED_PUBLIC_ECC_KEY;
 

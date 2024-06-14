@@ -5,15 +5,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.garminpay.BaseIT;
 import com.garminpay.TestUtils;
 import com.garminpay.exception.GarminPayApiException;
+import com.garminpay.exception.GarminPaySDKException;
 import com.garminpay.model.response.HealthResponse;
 import com.garminpay.model.response.ECCEncryptionKeyResponse;
 import com.garminpay.model.response.OAuthTokenResponse;
 import com.garminpay.model.response.RootResponse;
+import com.garminpay.model.response.PaymentCardDeepLinkResponse;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
 
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -24,8 +27,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class GarminPayProxyIT extends BaseIT {
 
@@ -33,8 +36,7 @@ class GarminPayProxyIT extends BaseIT {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
-    @SneakyThrows(JsonProcessingException.class)
-    void canGetRootEndpoint() {
+    void canGetRootEndpoint() throws JsonProcessingException {
         Map<String, RootResponse.HalLink> mockLinks = Map.of(
             "self", RootResponse.HalLink.builder().href("https://api.qa.fitpay.ninja/").build()
         );
@@ -57,8 +59,6 @@ class GarminPayProxyIT extends BaseIT {
         assertNotNull(response.getLinks().get("self"));
         assertEquals("https://api.qa.fitpay.ninja/", response.getLinks().get("self").getHref());
     }
-
-
 
     @Test
     void canHandle404ResponseFromRootEndpoint() {
@@ -95,8 +95,7 @@ class GarminPayProxyIT extends BaseIT {
     }
 
     @Test
-    @SneakyThrows(JsonProcessingException.class)
-    void canGetHealthStatus() {
+    void canGetHealthStatus() throws JsonProcessingException {
         HealthResponse mockHealthResponse = HealthResponse.builder()
             .healthStatus("OK")
             .build();
@@ -132,8 +131,7 @@ class GarminPayProxyIT extends BaseIT {
     }
 
     @Test
-    @SneakyThrows(JsonProcessingException.class)
-    void canGetOAuthAccessToken() {
+    void canGetOAuthAccessToken() throws JsonProcessingException {
         OAuthTokenResponse mockToken = OAuthTokenResponse.builder()
             .accessToken("testToken")
             .build();
@@ -180,8 +178,7 @@ class GarminPayProxyIT extends BaseIT {
     }
 
     @Test
-    @SneakyThrows(JsonProcessingException.class)
-    void canCompleteKeyExchange() {
+    void canCompleteKeyExchange() throws JsonProcessingException {
         String mockOauthToken = "mockAccessToken";
 
         ECCEncryptionKeyResponse mockKeyResponse = ECCEncryptionKeyResponse.builder()
@@ -219,5 +216,42 @@ class GarminPayProxyIT extends BaseIT {
         assertEquals("/config/encryptionKeys", exception.getPath());
         assertEquals(400, exception.getStatus());
         assertEquals("Bad Request", exception.getMessage());
+    }
+
+    @Test
+    void canRegisterCard() throws JsonProcessingException {
+
+        PaymentCardDeepLinkResponse paymentCardDeepLinkResponse = PaymentCardDeepLinkResponse.builder()
+            .deepLinkUrl("Deep link URL")
+            .build();
+
+        String paymentCardDeepLinkResponseBody = objectMapper.writeValueAsString(paymentCardDeepLinkResponse);
+
+        stubFor(post(urlPathEqualTo("/paymentCards"))
+            .willReturn(aResponse()
+                .withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody(paymentCardDeepLinkResponseBody)));
+
+        PaymentCardDeepLinkResponse deepLinkResponse = garminPayProxy.registerCard("mockOAuthToken", "mockEncryptedCardData");
+
+        assertNotNull(deepLinkResponse);
+        assertNotNull(deepLinkResponse.getDeepLinkUrl());
+    }
+
+    @Test
+    void canHandleOAuthFailureWhenRegisterCard() throws JsonProcessingException {
+        Map<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("error", "invalid_client");
+
+        String errorResponseBody = objectMapper.writeValueAsString(errorResponse);
+
+        stubFor(post(urlPathEqualTo("/paymentCards"))
+            .willReturn(aResponse()
+                .withStatus(401)
+                .withHeader("Content-Type", "application/json")
+                .withBody(errorResponseBody)));
+
+        assertThrows(GarminPaySDKException.class, () -> garminPayProxy.registerCard("mockOAuthToken", "mockEncryptedCardData"));
     }
 }

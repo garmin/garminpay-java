@@ -5,6 +5,7 @@ import com.garminpay.TestUtils;
 import com.garminpay.exception.GarminPayApiException;
 import com.garminpay.exception.GarminPaySDKException;
 import com.garminpay.model.request.CreateECCEncryptionKeyRequest;
+import com.garminpay.model.response.PaymentCardDeepLinkResponse;
 import com.garminpay.model.response.OAuthTokenResponse;
 import com.garminpay.model.response.HealthResponse;
 import com.garminpay.model.response.RootResponse;
@@ -34,11 +35,13 @@ class GarminPayProxyTest {
     private HttpResponse<RootResponse> httpRootResponseMock;
     private HttpResponse<OAuthTokenResponse> httpOAuthTokenMock;
     private HttpResponse<ECCEncryptionKeyResponse> httpECCEncryptionKeyMock;
+    private HttpResponse<PaymentCardDeepLinkResponse> httpPaymentCardDeepLinkResponseMock;
     private HttpResponse<HealthResponse> httpHealthResponseMock;
 
     private static final String baseApiUrl = "https://api.qa.fitpay.ninja";
     private static final String authUrl = "https://auth.qa.fitpay.ninja/oauth/token";
     private static final String keyExchangeUrl = baseApiUrl + "/config/encryptionKeys";
+    private static final String registerCardUrl = baseApiUrl + "/paymentCards";
 
     @BeforeEach
     void setUp() {
@@ -47,6 +50,7 @@ class GarminPayProxyTest {
         httpOAuthTokenMock = mock(HttpResponse.class);
         httpECCEncryptionKeyMock = mock(HttpResponse.class);
         httpHealthResponseMock = mock(HttpResponse.class);
+        httpPaymentCardDeepLinkResponseMock = mock(HttpResponse.class);
         garminPayProxy = new GarminPayProxy();
 
         try {
@@ -252,5 +256,37 @@ class GarminPayProxyTest {
         assertEquals(400, exception.getStatus());
         assertEquals("/config/encryptionKeys", exception.getPath());
         assertEquals("Bad Request", exception.getMessage());
+    }
+
+    @Test
+    void canRegisterCard() {
+        String testingDeepLinkUrl = "testingDeepLinkUrl";
+        PaymentCardDeepLinkResponse mockDeepLinkResponse = PaymentCardDeepLinkResponse.builder()
+            .deepLinkUrl(testingDeepLinkUrl)
+            .build();
+
+        when(httpPaymentCardDeepLinkResponseMock.statusCode()).thenReturn(200);
+        when(httpPaymentCardDeepLinkResponseMock.body()).thenReturn(mockDeepLinkResponse);
+        when(apiClientMock.post(eq(registerCardUrl), any(), any(Map.class), any(JsonBodyHandler.class))).thenReturn(httpPaymentCardDeepLinkResponseMock);
+
+        PaymentCardDeepLinkResponse deepLinkResponse = garminPayProxy.registerCard("mockOAuthToken", "mockEncryptedCardData");
+
+        assertEquals(testingDeepLinkUrl, deepLinkResponse.getDeepLinkUrl());
+        verify(apiClientMock, times(1)).post(eq(registerCardUrl), any(), any(Map.class), any(JsonBodyHandler.class));
+    }
+
+    @Test
+    void canHandleBadRequestResponseFromPostPaymentCards() {
+        String testingDeepLinkUrl = "testingDeepLinkUrl";
+
+        PaymentCardDeepLinkResponse mockDeepLinkResponse = PaymentCardDeepLinkResponse.builder()
+            .deepLinkUrl(testingDeepLinkUrl)
+            .build();
+
+        when(httpPaymentCardDeepLinkResponseMock.statusCode()).thenReturn(400);
+        when(httpPaymentCardDeepLinkResponseMock.body()).thenReturn(mockDeepLinkResponse);
+        when(apiClientMock.post(eq(registerCardUrl), any(), any(Map.class), any(JsonBodyHandler.class))).thenReturn(httpPaymentCardDeepLinkResponseMock);
+
+        assertThrows(GarminPayApiException.class, () -> garminPayProxy.registerCard("mockOAuthToken", "mockEncryptedCardData"));
     }
 }

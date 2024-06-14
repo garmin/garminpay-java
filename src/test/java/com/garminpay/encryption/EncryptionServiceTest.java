@@ -16,7 +16,7 @@ class EncryptionServiceTest {
 
     @Test
     void canEncryptCardDataWithSecretKey() {
-        String encryptedCardData = service.encryptCardData(TestUtils.TESTING_CARD_DATA, secretKey);
+        String encryptedCardData = service.encryptCardData(TestUtils.TESTING_CARD_DATA, secretKey, TestUtils.TESTING_KEY_ID);
 
         assertNotNull(encryptedCardData);
         assertDoesNotThrow(() -> {
@@ -26,11 +26,16 @@ class EncryptionServiceTest {
 
     @Test
     void cannotEncryptCardDataWithNullKey() {
-        assertThrows(IllegalArgumentException.class, () -> service.encryptCardData(TestUtils.TESTING_CARD_DATA, null));
+        assertThrows(IllegalArgumentException.class, () -> service.encryptCardData(TestUtils.TESTING_CARD_DATA, null, TestUtils.TESTING_KEY_ID));
     }
 
     @Test
     void cannotEncryptCardDataWithNullCard() {
-        assertThrows(IllegalArgumentException.class, () -> service.encryptCardData(null, secretKey));
+        assertThrows(IllegalArgumentException.class, () -> service.encryptCardData(null, secretKey, TestUtils.TESTING_KEY_ID));
+    }
+
+    @Test
+    void cannotEncryptCardDataWithNullKeyId() {
+        assertThrows(IllegalArgumentException.class, () -> service.encryptCardData(TestUtils.TESTING_CARD_DATA, secretKey, null));
     }
 }
