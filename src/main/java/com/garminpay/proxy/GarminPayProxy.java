@@ -3,9 +3,12 @@ package com.garminpay.proxy;
 import com.garminpay.APIClient;
 import com.garminpay.exception.GarminPayApiException;
 import com.garminpay.model.response.HealthResponse;
+
 import com.garminpay.model.request.CreateECCEncryptionKeyRequest;
 import com.garminpay.model.response.ECCEncryptionKeyResponse;
 import com.garminpay.model.response.RootResponse;
+import com.garminpay.model.request.CreatePaymentCardRequest;
+import com.garminpay.model.response.PaymentCardDeepLinkResponse;
 import com.garminpay.util.JsonBodyHandler;
 import com.garminpay.model.response.OAuthTokenResponse;
 
@@ -171,6 +174,48 @@ public class GarminPayProxy {
                 null,
                 eccEncryptionKeyResponse.getRequestId(),
                 eccEncryptionKeyResponse.getMessage()
+            );
+        }
+
+        return response.body();
+    }
+
+    /**
+     * Makes secure https request to Garmin Pay platform to register customer’s CardData.
+     *
+     * @param oAuthToken The OAuthToken to use in the request
+     * @param encryptedCardData Serialized and encrypted GarminPayCardDataObject
+     * @return sessionResponse reference data for the ephemeral session
+     */
+    public PaymentCardDeepLinkResponse registerCard(String oAuthToken, String encryptedCardData) {
+        String url = baseApiUrl + "/paymentCards";
+
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Content-Type", "application/json");
+        headers.put("Authorization", "Bearer " + oAuthToken);
+
+        CreatePaymentCardRequest requestBody = CreatePaymentCardRequest.builder()
+            .encryptedData(encryptedCardData)
+            .build();
+
+        HttpResponse<PaymentCardDeepLinkResponse> response = apiClient.post(url, requestBody, headers,
+            new JsonBodyHandler<>(PaymentCardDeepLinkResponse.class));
+
+        PaymentCardDeepLinkResponse paymentCardDeepLinkResponse = response.body();
+        if (paymentCardDeepLinkResponse == null) {
+            throw new GarminPayApiException("/paymentCards", response.statusCode(),
+                null, null, null, null, null, "Failed to register card, response is null"
+            );
+        } else if (response.statusCode() < 200 || response.statusCode() >= 300) {
+            throw new GarminPayApiException(
+                paymentCardDeepLinkResponse.getPath(),
+                response.statusCode(),
+                null,
+                null,
+                null,
+                null,
+                paymentCardDeepLinkResponse.getRequestId(),
+                paymentCardDeepLinkResponse.getMessage()
             );
         }
 

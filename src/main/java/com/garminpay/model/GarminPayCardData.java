@@ -6,7 +6,7 @@ import lombok.Value;
 
 @Builder
 @Value
-public class CardData {
+public class GarminPayCardData {
     /**
      * The primary account number (PAN) of the card.
      */

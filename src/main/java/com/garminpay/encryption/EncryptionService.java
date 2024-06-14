@@ -2,7 +2,7 @@ package com.garminpay.encryption;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.garminpay.exception.GarminPayEncryptionException;
-import com.garminpay.model.CardData;
+import com.garminpay.model.GarminPayCardData;
 import com.nimbusds.jose.EncryptionMethod;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWEAlgorithm;
@@ -57,20 +57,24 @@ public class EncryptionService {
     /**
      * Encrypts a CardData object for end to end payload encryption.
      *
-     * @param cardData  The CardData for card registration
+     * @param garminPayCardData  The CardData for card registration
      * @param secretKey secret key for encrypting sensitive data
+     * @param keyId Server keyId to be encrypted
      * @return string representing the JWE of cardData
      */
-    public String encryptCardData(@NonNull CardData cardData, @NonNull SecretKey secretKey) {
+    public String encryptCardData(
+        @NonNull GarminPayCardData garminPayCardData, @NonNull SecretKey secretKey, @NonNull String keyId
+    ) {
         try {
             AESEncrypter encryptor = new AESEncrypter(secretKey);
 
-            String serializedCardData = serializeCardData(cardData);
+            String serializedCardData = serializeCardData(garminPayCardData);
             Payload payload = new Payload(serializedCardData);
 
             JWEObject jwe = new JWEObject(
                 new JWEHeader.Builder(ALGORITHM, EncryptionMethod.A256GCM)
                     .contentType("application/jwe")
+                    .keyID(keyId)
                     .build(),
                 payload);
 
@@ -84,13 +88,13 @@ public class EncryptionService {
     /**
      * Serializes a CardData object and returns it.
      *
-     * @param cardData The CardData to serialize
+     * @param garminPayCardData The CardData to serialize
      * @return String of serialized CardData object
      */
-    private String serializeCardData(CardData cardData) {
+    private String serializeCardData(GarminPayCardData garminPayCardData) {
         try {
             // map and serialize CardData object
-            return mapper.writeValueAsString(cardData);
+            return mapper.writeValueAsString(garminPayCardData);
         } catch (JsonProcessingException e) {
             throw new GarminPayEncryptionException("Could not map or serialize card data");
         }

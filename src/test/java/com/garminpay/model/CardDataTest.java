@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class CardDataTest {
     @Test
     void canCreateCardDataObject() {
-        CardData cardData = CardData.builder()
+        GarminPayCardData garminPayCardData = GarminPayCardData.builder()
             .pan("1234567890123456")
             .cvv("123")
             .expMonth(12)
@@ -18,11 +18,11 @@ class CardDataTest {
             .address(TestUtils.TESTING_ADDRESS)
             .build();
 
-        assertNotNull(cardData);
+        assertNotNull(garminPayCardData);
     }
 
     @Test
     void cannotCreateCardObjectWithoutPan() {
-        assertThrows(IllegalArgumentException.class, () -> CardData.builder().build());
+        assertThrows(IllegalArgumentException.class, () -> GarminPayCardData.builder().build());
     }
 }
