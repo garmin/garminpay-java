@@ -2,6 +2,7 @@ package com.garminpay.proxy;
 
 import com.garminpay.APIClient;
 import com.garminpay.exception.GarminPayApiException;
+import com.garminpay.model.request.OAuthTokenRequest;
 import com.garminpay.model.response.HealthResponse;
 
 import com.garminpay.model.request.CreateECCEncryptionKeyRequest;
@@ -9,14 +10,12 @@ import com.garminpay.model.response.ECCEncryptionKeyResponse;
 import com.garminpay.model.response.RootResponse;
 import com.garminpay.model.request.CreatePaymentCardRequest;
 import com.garminpay.model.response.PaymentCardDeepLinkResponse;
-import com.garminpay.util.JsonBodyHandler;
 import com.garminpay.model.response.OAuthTokenResponse;
+import org.apache.hc.core5.http.HttpHeaders;
+import org.apache.hc.core5.http.message.BasicHeader;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
-import java.net.http.HttpResponse;
 
 /**
  * GarminPayProxy class responsible for calling the Garmin Pay API.
@@ -40,27 +39,25 @@ public class GarminPayProxy {
      * @throws GarminPayApiException if the API response indicates a failure (status code < 200 or >= 300).
      */
     public RootResponse getRootEndpoint() {
-        HttpResponse<RootResponse> response = apiClient.get(
-            baseApiUrl + "/", new JsonBodyHandler<>(RootResponse.class)
-        );
+        RootResponse response = apiClient.get(baseApiUrl + "/", RootResponse.class);
 
-        RootResponse rootResponse = response.body();
-        if (rootResponse == null) {
-            throw new GarminPayApiException("/", response.statusCode(),
+        if (response == null) {
+            throw new GarminPayApiException("/", null,
                 null, null, null, null, null, "Failed to retrieve root endpoint, response is null");
-        } else if (response.statusCode() < 200 || response.statusCode() >= 300) {
+        } else if (response.getStatus() < 200 || response.getStatus() >= 300) {
             throw new GarminPayApiException(
-                rootResponse.getPath(),
-                response.statusCode(),
+                response.getPath(),
+                response.getStatus(),
                 null,
                 null,
                 null,
                 null,
-                rootResponse.getRequestId(),
-                rootResponse.getMessage()
+                response.getRequestId(),
+                response.getMessage()
             );
         }
-        return rootResponse;
+
+        return response;
     }
 
     /**
@@ -70,27 +67,24 @@ public class GarminPayProxy {
      * @throws GarminPayApiException if the API response indicates a failure (status code < 200 or >= 300).
      */
     public HealthResponse getHealthStatus() {
-        HttpResponse<HealthResponse> response = apiClient.get(
-            baseApiUrl + "/health", new JsonBodyHandler<>(HealthResponse.class)
-        );
+        HealthResponse response = apiClient.get(baseApiUrl + "/health", HealthResponse.class);
 
-        HealthResponse healthResponse = response.body();
-        if (healthResponse == null) {
-            throw new GarminPayApiException("/health", response.statusCode(),
+        if (response == null) {
+            throw new GarminPayApiException("/health", null,
                 null, null, null, null, null, "Failed to retrieve health status, response is null");
-        } else if (response.statusCode() < 200 || response.statusCode() >= 300) {
+        } else if (response.getStatus() < 200 || response.getStatus() >= 300) {
             throw new GarminPayApiException(
-                healthResponse.getPath(),
-                response.statusCode(),
+                response.getPath(),
+                response.getStatus(),
                 null,
                 null,
                 null,
                 null,
-                healthResponse.getRequestId(),
-                healthResponse.getMessage()
+                response.getRequestId(),
+                response.getMessage()
             );
         }
-        return response.body();
+        return response;
     }
 
     /**
@@ -105,36 +99,37 @@ public class GarminPayProxy {
         String credentials = clientId + ":" + clientSecret;
         String encodedCredentials = Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
 
-        Map<String, String> body = new HashMap<>();
-        body.put("grant_type", "client_credentials");
-
-        Map<String, String> headers = new HashMap<>();
-        headers.put("Content-Type", "application/x-www-form-urlencoded");
-        headers.put("Authorization", "Basic " + encodedCredentials);
-
         String url = authUrl + "/oauth/token";
 
-        HttpResponse<OAuthTokenResponse> response = apiClient.post(url, body, headers,
-            new JsonBodyHandler<>(OAuthTokenResponse.class));
+        OAuthTokenRequest request = OAuthTokenRequest.builder()
+            .grantType("client_credentials")
+            .build();
 
-        OAuthTokenResponse oAuthTokenResponse = response.body();
-        if (oAuthTokenResponse == null) {
-            throw new GarminPayApiException("/oauth/token", response.statusCode(),
+        OAuthTokenResponse response = apiClient.post(
+            url,
+            OAuthTokenResponse.class,
+            request,
+            new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded"),
+            new BasicHeader(HttpHeaders.AUTHORIZATION, "Basic " + encodedCredentials)
+        );
+
+        if (response == null) {
+            throw new GarminPayApiException("/oauth/token", null,
                 null, null, null, null, null, "Failed to get OAuth access token, response is null");
-        } else if (response.statusCode() < 200 || response.statusCode() >= 300) {
+        } else if (response.getStatus() < 200 || response.getStatus() >= 300) {
             throw new GarminPayApiException(
-                oAuthTokenResponse.getPath(),
-                response.statusCode(),
+                response.getPath(),
+                response.getStatus(),
                 null,
                 null,
                 null,
                 null,
-                oAuthTokenResponse.getRequestId(),
-                oAuthTokenResponse.getMessage()
+                response.getRequestId(),
+                response.getMessage()
             );
         }
 
-        return response.body().getAccessToken();
+        return response.getAccessToken();
     }
 
     /**
@@ -149,76 +144,76 @@ public class GarminPayProxy {
     public ECCEncryptionKeyResponse exchangeKeys(String oAuthToken, String publicKey) {
         String url = baseApiUrl + "/config/encryptionKeys";
 
-        CreateECCEncryptionKeyRequest keyEncryptionRequest = CreateECCEncryptionKeyRequest.builder()
+        CreateECCEncryptionKeyRequest request = CreateECCEncryptionKeyRequest.builder()
             .clientPublicKey(publicKey)
             .build();
 
-        Map<String, String> headers = new HashMap<>();
-        headers.put("Content-Type", "application/json");
-        headers.put("Authorization", "Bearer " + oAuthToken);
+        ECCEncryptionKeyResponse response = apiClient.post(
+            url,
+            ECCEncryptionKeyResponse.class,
+            request,
+            new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded"),
+            new BasicHeader(HttpHeaders.AUTHORIZATION, "Bearer " + oAuthToken)
+        );
 
-        HttpResponse<ECCEncryptionKeyResponse> response = apiClient.post(url, keyEncryptionRequest, headers,
-            new JsonBodyHandler<>(ECCEncryptionKeyResponse.class));
-
-        ECCEncryptionKeyResponse eccEncryptionKeyResponse = response.body();
-        if (eccEncryptionKeyResponse == null) {
-            throw new GarminPayApiException("/config/encryptionKeys", response.statusCode(),
+        if (response == null) {
+            throw new GarminPayApiException("/config/encryptionKeys", null,
                 null, null, null, null, null, "Failed to exchange keys, response is null");
-        } else if (response.statusCode() < 200 || response.statusCode() >= 300) {
+        } else if (response.getStatus() < 200 || response.getStatus() >= 300) {
             throw new GarminPayApiException(
-                eccEncryptionKeyResponse.getPath(),
-                response.statusCode(),
+                response.getPath(),
+                response.getStatus(),
                 null,
                 null,
                 null,
                 null,
-                eccEncryptionKeyResponse.getRequestId(),
-                eccEncryptionKeyResponse.getMessage()
+                response.getRequestId(),
+                response.getMessage()
             );
         }
 
-        return response.body();
+        return response;
     }
 
     /**
      * Makes secure https request to Garmin Pay platform to register customer’s CardData.
      *
-     * @param oAuthToken The OAuthToken to use in the request
+     * @param oAuthToken        The OAuthToken to use in the request
      * @param encryptedCardData Serialized and encrypted GarminPayCardDataObject
      * @return sessionResponse reference data for the ephemeral session
      */
     public PaymentCardDeepLinkResponse registerCard(String oAuthToken, String encryptedCardData) {
         String url = baseApiUrl + "/paymentCards";
 
-        Map<String, String> headers = new HashMap<>();
-        headers.put("Content-Type", "application/json");
-        headers.put("Authorization", "Bearer " + oAuthToken);
-
-        CreatePaymentCardRequest requestBody = CreatePaymentCardRequest.builder()
+        CreatePaymentCardRequest request = CreatePaymentCardRequest.builder()
             .encryptedData(encryptedCardData)
             .build();
 
-        HttpResponse<PaymentCardDeepLinkResponse> response = apiClient.post(url, requestBody, headers,
-            new JsonBodyHandler<>(PaymentCardDeepLinkResponse.class));
+        PaymentCardDeepLinkResponse response = apiClient.post(
+            url,
+            PaymentCardDeepLinkResponse.class,
+            request,
+            new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded"),
+            new BasicHeader(HttpHeaders.AUTHORIZATION, "Bearer " + oAuthToken)
+        );
 
-        PaymentCardDeepLinkResponse paymentCardDeepLinkResponse = response.body();
-        if (paymentCardDeepLinkResponse == null) {
-            throw new GarminPayApiException("/paymentCards", response.statusCode(),
+        if (response == null) {
+            throw new GarminPayApiException("/paymentCards", null,
                 null, null, null, null, null, "Failed to register card, response is null"
             );
-        } else if (response.statusCode() < 200 || response.statusCode() >= 300) {
+        } else if (response.getStatus() < 200 || response.getStatus() >= 300) {
             throw new GarminPayApiException(
-                paymentCardDeepLinkResponse.getPath(),
-                response.statusCode(),
+                response.getPath(),
+                response.getStatus(),
                 null,
                 null,
                 null,
                 null,
-                paymentCardDeepLinkResponse.getRequestId(),
-                paymentCardDeepLinkResponse.getMessage()
+                response.getRequestId(),
+                response.getMessage()
             );
         }
 
-        return response.body();
+        return response;
     }
 }
