@@ -1,6 +1,7 @@
 package com.garminpay.model.response;
 
 import lombok.Getter;
+import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 
@@ -8,6 +9,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 public abstract class ErrorResponse {
     String path;
+    @Setter
     int status;
     String summary;
     String description;

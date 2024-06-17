@@ -1,15 +1,22 @@
 package com.garminpay;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.garminpay.exception.GarminPaySDKException;
-import com.garminpay.util.FormBodyHandler;
-import com.garminpay.util.JsonBodyPublisher;
+import com.garminpay.model.response.ErrorResponse;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.http.ClassicHttpRequest;
+import org.apache.hc.core5.http.ClassicHttpResponse;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.Header;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.ParseException;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.http.io.entity.StringEntity;
+import org.apache.hc.core5.http.io.support.ClassicRequestBuilder;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.util.Map;
 
 /**
  * APIClient class responsible for configuring the HTTP client and providing a singleton instance.
@@ -17,10 +24,11 @@ import java.util.Map;
 public class APIClient {
 
     private static APIClient instance;
-    private final HttpClient httpClient;
+    private final CloseableHttpClient httpClient;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     private APIClient() {
-        this.httpClient = HttpClient.newBuilder().build();
+        this.httpClient = HttpClients.createDefault();
     }
 
     /**
@@ -36,59 +44,77 @@ public class APIClient {
     }
 
     /**
-     * Sends a GET request to the specified endpoint and returns the response.
+     * Sends a GET request to the specified endpoint then returns the response.
      *
-     * @param url         the full URL to send the GET request to
-     * @param bodyHandler the body handler to handle the response body
-     * @param <T>         the type of the response body
-     * @return HttpResponse<T> containing the response from the server
+     * @param url           The URL to which the POST request will be sent.
+     * @param responseClass The class type into which the response will be deserialized.
+     * @param <T>           The type of the response class, extending ErrorResponse.
+     * @return The deserialized response of type T.
      */
-    public <T> HttpResponse<T> get(String url, HttpResponse.BodyHandler<T> bodyHandler) {
-        HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create(url))
-            .header("Accept", "application/json")
-            .GET()
+    public <T extends ErrorResponse> T get(String url, Class<T> responseClass) {
+        T result;
+        ClassicHttpRequest httpGet = ClassicRequestBuilder.get(url)
             .build();
 
         try {
-            return httpClient.send(request, bodyHandler);
-        } catch (IOException | InterruptedException e) {
-            throw new GarminPaySDKException("Failed to get URL: " + url, e);
+            result = httpClient.execute(httpGet, response -> processResponse(response, responseClass));
+        } catch (IOException e) {
+            throw new GarminPaySDKException("HttpClient failed to GET URL: " + url, e);
         }
+
+        return result;
     }
 
     /**
-     * Sends a POST request to the specified endpoint with the provided body and returns the response.
+     * Sends a POST request to the specified endpoint with the provided request and headers, then returns the response.
      *
-     * @param url         the full URL to send the POST request to
-     * @param body        the body of the POST request as an object
-     * @param headers     the headers for the POST request
-     * @param bodyHandler the body handler to handle the response body
-     * @param <T>         the type of the response body
-     * @return HttpResponse<T> containing the response from the server
+     * @param url           The URL to which the POST request will be sent.
+     * @param responseClass The class type into which the response will be deserialized.
+     * @param requestModel  The request model to be sent in the request body.
+     * @param headers       Optional headers to be included in the request.
+     * @param <T>           The type of the response class, extending ErrorResponse.
+     * @param <R>           The type of the request model.
+     * @return The deserialized response of type T.
      */
-    public <T> HttpResponse<T> post(String url, Object body, Map<String, String> headers,
-                                    HttpResponse.BodyHandler<T> bodyHandler) {
-        HttpRequest.BodyPublisher bodyPublisher;
-        if ("application/x-www-form-urlencoded".equals(headers.get("Content-Type")) && body instanceof Map) {
-            bodyPublisher = FormBodyHandler.ofFormData(
-                (Map<Object, Object>) body);
-        } else {
-            bodyPublisher = JsonBodyPublisher.ofObject(body);
+    public <T extends ErrorResponse, R> T post(String url, Class<T> responseClass, R requestModel, Header... headers) {
+        T resultContent = null;
+
+        String serializedRequestBody;
+        try {
+            serializedRequestBody = objectMapper.writeValueAsString(requestModel);
+        } catch (JsonProcessingException e) {
+            throw new GarminPaySDKException("Failed to parse request model: " + requestModel, e);
         }
 
-        HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
-            .uri(URI.create(url))
-            .POST(bodyPublisher);
+        ClassicHttpRequest httpPost = ClassicRequestBuilder.post(url)
+            .setEntity(new StringEntity(serializedRequestBody, ContentType.APPLICATION_JSON))
+            .build();
 
-        headers.forEach(requestBuilder::header);
-
-        HttpRequest request = requestBuilder.build();
+        httpPost.setHeaders(headers);
 
         try {
-            return httpClient.send(request, bodyHandler);
-        } catch (IOException | InterruptedException e) {
-            throw new GarminPaySDKException("Failed to post to URL: " + url, e);
+            resultContent = httpClient.execute(httpPost, response -> processResponse(response, responseClass));
+        } catch (IOException e) {
+            throw new GarminPaySDKException("HttpClient failed to POST URL: " + url, e);
         }
+
+        return resultContent;
+    }
+
+    private <T extends ErrorResponse> T processResponse(ClassicHttpResponse response, Class<T> responseClass) throws IOException {
+        final HttpEntity entity = response.getEntity();
+        String entityContent;
+        T responseObject;
+
+        try {
+            entityContent = EntityUtils.toString(entity);
+            responseObject = objectMapper.readValue(entityContent, responseClass);
+            responseObject.setStatus(response.getCode());
+        } catch (ParseException | JsonProcessingException e) {
+            throw new GarminPaySDKException("Failed to parse response entity. ", e);
+        }
+
+
+        return responseObject;
     }
 }

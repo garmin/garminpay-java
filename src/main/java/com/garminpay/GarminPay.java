@@ -20,7 +20,7 @@ public class GarminPay {
      * @throws IllegalArgumentException if clientID or clientSecret is NULL
      */
     public static void initialize(String clientId, String clientSecret) {
-        if (clientId == null || clientId.isBlank() || clientSecret == null || clientSecret.isBlank()) {
+        if (clientId == null || clientId.trim().isEmpty() || clientSecret == null || clientSecret.trim().isEmpty()) {
             throw new IllegalArgumentException(
                 "clientId and clientSecret cannot be null or empty"
             );

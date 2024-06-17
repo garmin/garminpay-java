@@ -9,7 +9,7 @@ import lombok.Getter;
 public class GarminPayApiException extends GarminPayBaseException {
 
     private final String path;
-    private final int status;
+    private final Integer status;
     private final String summary;
     private final String description;
     private final String details;
@@ -28,7 +28,7 @@ public class GarminPayApiException extends GarminPayBaseException {
      * @param requestId   The unique request ID associated with the error.
      * @param message     The detail message explaining the reason for the exception.
      */
-    public GarminPayApiException(String path, int status, String summary, String description,
+    public GarminPayApiException(String path, Integer status, String summary, String description,
                                  String details, String created, String requestId, String message) {
         super(message);
         this.path = path;
@@ -53,7 +53,7 @@ public class GarminPayApiException extends GarminPayBaseException {
      * @param message     The detail message explaining the reason for the exception.
      * @param cause       The cause of the exception.
      */
-    public GarminPayApiException(String path, int status, String summary, String description,
+    public GarminPayApiException(String path, Integer status, String summary, String description,
                                  String details, String created, String requestId, String message, Throwable cause) {
         super(message, cause);
         this.path = path;
