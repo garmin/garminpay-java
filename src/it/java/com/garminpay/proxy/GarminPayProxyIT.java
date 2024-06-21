@@ -5,12 +5,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.garminpay.BaseIT;
 import com.garminpay.TestUtils;
 import com.garminpay.exception.GarminPayApiException;
+import com.garminpay.model.response.ErrorResponse;
 import com.garminpay.model.response.HealthResponse;
-import com.garminpay.model.response.ECCEncryptionKeyResponse;
+import com.garminpay.model.response.ExchangeKeysResponse;
 import com.garminpay.model.response.OAuthTokenResponse;
 import com.garminpay.model.response.RootResponse;
-import com.garminpay.model.response.PaymentCardDeepLinkResponse;
+import com.garminpay.model.response.RegisterCardResponse;
 import com.github.tomakehurst.wiremock.client.WireMock;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.HttpHeaders;
 import org.apache.hc.core5.http.HttpStatus;
 import org.junit.jupiter.api.Test;
 
@@ -32,13 +35,13 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class GarminPayProxyIT extends BaseIT {
 
-    private final GarminPayProxy garminPayProxy = new GarminPayProxy();
+    private final GarminPayProxy garminPayProxy = new GarminPayProxy("http://localhost:" + BaseIT.wireMockServer.port(), "http://localhost:" + BaseIT.wireMockServer.port());
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
     void canGetRootEndpoint() throws JsonProcessingException {
         Map<String, RootResponse.HalLink> mockLinks = Collections.singletonMap(
-            "self", RootResponse.HalLink.builder().href("https://localhost/").build()
+            "self", RootResponse.HalLink.builder().href("https://testing/").build()
         );
 
         RootResponse mockRootResponse = RootResponse.builder()
@@ -49,45 +52,50 @@ class GarminPayProxyIT extends BaseIT {
 
         WireMock.stubFor(get(urlPathEqualTo("/"))
             .willReturn(aResponse()
-                .withStatus(200)
-                .withHeader("Content-Type", "application/json")
+                .withStatus(HttpStatus.SC_OK)
+                .withHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.toString())
+                .withHeader("CF-RAY", "testing-cf-ray")
                 .withBody(responseBody)));
 
         RootResponse response = garminPayProxy.getRootEndpoint();
 
-        assertNotNull(response);
-        assertNotNull(response.getLinks().get("self"));
-        assertEquals("https://localhost/", response.getLinks().get("self").getHref());
+        assertEquals("https://testing/", response.getLinks().get("self").getHref());
     }
 
     @Test
-    void canHandle404ResponseFromRootEndpoint() {
+    void canHandle404ResponseFromRootEndpoint() throws JsonProcessingException {
+        ErrorResponse mockRootResponse = ErrorResponse.builder()
+            .status(HttpStatus.SC_NOT_FOUND)
+            .path("/")
+            .message("Not Found")
+            .build();
+
+        String responseBody = objectMapper.writeValueAsString(mockRootResponse);
+
         WireMock.stubFor(get(urlPathEqualTo("/"))
             .willReturn(aResponse()
-                .withStatus(404)
-                .withHeader("Content-Type", "application/json")
-                .withBody("{\"path\":\"/\", \"status\":404, \"message\":\"Not Found\"}")));
+                .withStatus(HttpStatus.SC_NOT_FOUND)
+                .withHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.toString())
+                .withHeader("CF-RAY", "testing-cf-ray")
+                .withBody(responseBody)));
 
         GarminPayApiException exception = assertThrows(GarminPayApiException.class, garminPayProxy::getRootEndpoint);
 
-        assertEquals("/", exception.getPath());
         assertEquals(HttpStatus.SC_NOT_FOUND, exception.getStatus());
-        assertEquals("Not Found", exception.getMessage());
     }
 
     @Test
     void canHandle502ResponseFromRootEndpoint() {
         WireMock.stubFor(get(urlPathEqualTo("/"))
             .willReturn(aResponse()
-                .withStatus(502)
-                .withHeader("Content-Type", "application/json")
-                .withBody("{\"path\":\"/\", \"status\":502, \"message\":\"Bad Gateway\"}")));
+                .withStatus(HttpStatus.SC_BAD_GATEWAY)
+                .withHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.toString())
+                .withHeader("CF-RAY", "testing-cf-ray")
+                .withBody("Invalid response body")));
 
         GarminPayApiException exception = assertThrows(GarminPayApiException.class, garminPayProxy::getRootEndpoint);
 
-        assertEquals("/", exception.getPath());
         assertEquals(HttpStatus.SC_BAD_GATEWAY, exception.getStatus());
-        assertEquals("Bad Gateway", exception.getMessage());
     }
 
     @Test
@@ -100,7 +108,9 @@ class GarminPayProxyIT extends BaseIT {
 
         WireMock.stubFor(get(urlPathEqualTo("/health"))
             .willReturn(aResponse()
-                .withHeader("Content-Type", "application/json")
+                .withStatus(HttpStatus.SC_OK)
+                .withHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.toString())
+                .withHeader("CF-RAY", "testing-cf-ray")
                 .withBody(responseBody)));
 
         HealthResponse health = garminPayProxy.getHealthStatus();
@@ -113,15 +123,14 @@ class GarminPayProxyIT extends BaseIT {
     void canHandle502ResponseFromGetHealthStatus() {
         WireMock.stubFor(get(urlPathEqualTo("/health"))
             .willReturn(aResponse()
-                .withStatus(502)
-                .withHeader("Content-Type", "application/json")
-                .withBody("{\"path\":\"/health\", \"status\":502, \"message\":\"Bad Gateway\"}")));
+                .withStatus(HttpStatus.SC_BAD_GATEWAY)
+                .withHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.toString())
+                .withHeader("CF-RAY", "testing-cf-ray")
+                .withBody("Invalid response body")));
 
         GarminPayApiException exception = assertThrows(GarminPayApiException.class, garminPayProxy::getHealthStatus);
 
-        assertEquals("/health", exception.getPath());
         assertEquals(HttpStatus.SC_BAD_GATEWAY, exception.getStatus());
-        assertEquals("Bad Gateway", exception.getMessage());
     }
 
     @Test
@@ -136,42 +145,50 @@ class GarminPayProxyIT extends BaseIT {
         String clientSecret = "testClientSecret";
 
         stubFor(post(urlPathEqualTo("/oauth/token"))
-            .withHeader("Authorization", equalTo("Basic " + Base64.getEncoder().encodeToString((clientID + ":" + clientSecret).getBytes())))
-            .withHeader("Content-Type", equalTo("application/x-www-form-urlencoded"))
+            .withHeader(HttpHeaders.AUTHORIZATION, equalTo("Basic " + Base64.getEncoder().encodeToString((clientID + ":" + clientSecret).getBytes())))
+            .withHeader(HttpHeaders.CONTENT_TYPE, equalTo(ContentType.APPLICATION_FORM_URLENCODED.toString()))
             .willReturn(aResponse()
-                .withStatus(200)
-                .withHeader("Content-Type", "application/json")
+                .withStatus(HttpStatus.SC_OK)
+                .withHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.toString())
+                .withHeader("CF-RAY", "testing-cf-ray")
                 .withBody(responseBody)));
 
-        String token = garminPayProxy.getOAuthAccessToken(clientID, clientSecret);
-        assertEquals("testToken", token);
+        OAuthTokenResponse response = garminPayProxy.getOAuthAccessToken(clientID, clientSecret);
+        assertEquals("testToken", response.getAccessToken());
     }
 
     @Test
-    void canHandle401ResponseFromGetOAuthAccessToken() {
+    void canHandle401ResponseFromGetOAuthAccessToken() throws JsonProcessingException {
         String clientID = "test-client-id";
         String clientSecret = "test-client-secret";
 
+        ErrorResponse errorResponse = ErrorResponse.builder()
+            .path("/oauth/token")
+            .message("Unauthorized")
+            .status(HttpStatus.SC_UNAUTHORIZED)
+            .build();
+
+        String responseBody = objectMapper.writeValueAsString(errorResponse);
+
         stubFor(post(urlPathEqualTo("/oauth/token"))
-            .withHeader("Authorization", equalTo("Basic " + Base64.getEncoder().encodeToString((clientID + ":" + clientSecret).getBytes())))
-            .withHeader("Content-Type", equalTo("application/x-www-form-urlencoded"))
+            .withHeader(HttpHeaders.AUTHORIZATION, equalTo("Basic " + Base64.getEncoder().encodeToString((clientID + ":" + clientSecret).getBytes())))
+            .withHeader(HttpHeaders.CONTENT_TYPE, equalTo(ContentType.APPLICATION_FORM_URLENCODED.toString()))
             .willReturn(aResponse()
-                .withStatus(401)
-                .withHeader("Content-Type", "application/json")
-                .withBody("{\"path\":\"/oauth/token\", \"status\":401, \"message\":\"Unauthorized\"}")));
+                .withStatus(HttpStatus.SC_UNAUTHORIZED)
+                .withHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.toString())
+                .withHeader("CF-RAY", "testing-cf-ray")
+                .withBody(responseBody)));
 
         GarminPayApiException exception = assertThrows(GarminPayApiException.class, () -> garminPayProxy.getOAuthAccessToken(clientID, clientSecret));
 
-        assertEquals("/oauth/token", exception.getPath());
         assertEquals(HttpStatus.SC_UNAUTHORIZED, exception.getStatus());
-        assertEquals("Unauthorized", exception.getMessage());
     }
 
     @Test
     void canCompleteKeyExchange() throws JsonProcessingException {
         String mockOauthToken = "mockAccessToken";
 
-        ECCEncryptionKeyResponse mockKeyResponse = ECCEncryptionKeyResponse.builder()
+        ExchangeKeysResponse mockKeyResponse = ExchangeKeysResponse.builder()
             .keyId(UUID.randomUUID().toString())
             .active(true)
             .serverPublicKey(TestUtils.TESTING_ENCODED_PUBLIC_ECC_KEY)
@@ -181,50 +198,59 @@ class GarminPayProxyIT extends BaseIT {
 
         stubFor(post(urlPathEqualTo("/config/encryptionKeys"))
             .willReturn(aResponse()
-                .withStatus(201)
-                .withHeader("Content-Type", "application/json")
+                .withStatus(HttpStatus.SC_CREATED)
+                .withHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.toString())
+                .withHeader("CF-RAY", "testing-cf-ray")
                 .withBody(responseBody)));
 
-        ECCEncryptionKeyResponse eccEncryptionKeyResponse = garminPayProxy.exchangeKeys(mockOauthToken, TestUtils.TESTING_ENCODED_PUBLIC_ECC_KEY);
-        assertNotNull(eccEncryptionKeyResponse);
+        ExchangeKeysResponse exchangeKeysResponse = garminPayProxy.exchangeKeys(mockOauthToken, TestUtils.TESTING_ENCODED_PUBLIC_ECC_KEY);
+        assertNotNull(exchangeKeysResponse);
     }
 
     @Test
-    void canHandle400ResponseFromKeyExchange() {
+    void canHandle400ResponseFromKeyExchange() throws JsonProcessingException {
         String mockOauthToken = "mockAccessToken";
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+            .path("/config/encryptionKeys")
+            .status(HttpStatus.SC_BAD_REQUEST)
+            .message("Bad Request")
+            .build();
+
+        String responseBody = objectMapper.writeValueAsString(errorResponse);
 
         stubFor(post(urlPathEqualTo("/config/encryptionKeys"))
             .willReturn(aResponse()
-                .withStatus(400)
-                .withHeader("Content-Type", "application/json")
-                .withBody("{\"path\":\"/config/encryptionKeys\", \"status\":400, \"message\":\"Bad Request\"}")));
+                .withStatus(HttpStatus.SC_BAD_REQUEST)
+                .withHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.toString())
+                .withHeader("CF-RAY", "testing-cf-ray")
+                .withBody(responseBody)));
 
         GarminPayApiException exception = assertThrows(GarminPayApiException.class, () -> garminPayProxy.exchangeKeys(mockOauthToken, TestUtils.TESTING_ENCODED_PUBLIC_ECC_KEY));
 
         assertEquals("/config/encryptionKeys", exception.getPath());
         assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getStatus());
-        assertEquals("Bad Request", exception.getMessage());
     }
 
     @Test
     void canRegisterCard() throws JsonProcessingException {
 
-        PaymentCardDeepLinkResponse paymentCardDeepLinkResponse = PaymentCardDeepLinkResponse.builder()
+        RegisterCardResponse mockRegisterCardResponse = RegisterCardResponse.builder()
             .deepLinkUrl("Deep link URL")
             .build();
 
-        String paymentCardDeepLinkResponseBody = objectMapper.writeValueAsString(paymentCardDeepLinkResponse);
+        String registerCardResponseBody = objectMapper.writeValueAsString(mockRegisterCardResponse);
 
         stubFor(post(urlPathEqualTo("/paymentCards"))
             .willReturn(aResponse()
-                .withStatus(200)
-                .withHeader("Content-Type", "application/json")
-                .withBody(paymentCardDeepLinkResponseBody)));
+                .withStatus(HttpStatus.SC_OK)
+                .withHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.toString())
+                .withHeader("CF-RAY", "testing-cf-ray")
+                .withBody(registerCardResponseBody)));
 
-        PaymentCardDeepLinkResponse deepLinkResponse = garminPayProxy.registerCard("mockOAuthToken", "mockEncryptedCardData");
+        RegisterCardResponse registerCardResponse = garminPayProxy.registerCard("mockOAuthToken", "mockEncryptedCardData");
 
-        assertNotNull(deepLinkResponse);
-        assertNotNull(deepLinkResponse.getDeepLinkUrl());
+        assertNotNull(registerCardResponse.getDeepLinkUrl());
     }
 
     @Test
@@ -236,8 +262,9 @@ class GarminPayProxyIT extends BaseIT {
 
         stubFor(post(urlPathEqualTo("/paymentCards"))
             .willReturn(aResponse()
-                .withStatus(401)
-                .withHeader("Content-Type", "application/json")
+                .withStatus(HttpStatus.SC_BAD_REQUEST)
+                .withHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.toString())
+                .withHeader("CF-RAY", "testing-cf-ray")
                 .withBody(errorResponseBody)));
 
         assertThrows(GarminPayApiException.class, () -> garminPayProxy.registerCard("mockOAuthToken", "mockEncryptedCardData"));

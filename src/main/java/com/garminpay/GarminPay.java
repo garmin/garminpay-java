@@ -1,6 +1,7 @@
 package com.garminpay;
 
 import com.garminpay.model.GarminPayCardData;
+import com.garminpay.proxy.GarminPayProxy;
 import lombok.Getter;
 
 /**
@@ -11,6 +12,8 @@ public class GarminPay {
     private static String clientId;
     @Getter
     private static String clientSecret;
+    private static final String BASE_URL = "https://api.qa.fitpay.ninja";
+    private static final String AUTH_URL = "https://auth.qa.fitpay.ninja";
 
     /**
      * Initializes the SDK with the given clientId and clientSecret.
@@ -37,7 +40,8 @@ public class GarminPay {
      * @return Deeplink url to GCM app
      */
     public static String registerCard(GarminPayCardData garminCardDataObject) {
-        GarminPayService garminPayService = new GarminPayService();
+        GarminPayProxy garminPayProxy = new GarminPayProxy(BASE_URL, AUTH_URL);
+        GarminPayService garminPayService = new GarminPayService(garminPayProxy);
         return garminPayService.registerCard(garminCardDataObject, clientId, clientSecret);
     }
 }
