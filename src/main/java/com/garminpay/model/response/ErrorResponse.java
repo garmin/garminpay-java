@@ -1,19 +1,21 @@
 package com.garminpay.model.response;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.experimental.SuperBuilder;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Builder;
+import lombok.Value;
 
-
-@Getter
-@SuperBuilder
-public abstract class ErrorResponse {
+@Value
+@Builder
+public class ErrorResponse {
     String path;
-    @Setter
     int status;
     String summary;
     String description;
     String details;
+
+    @JsonProperty("created")
+    String createdTs;
+
     String requestId;
     String message;
 }

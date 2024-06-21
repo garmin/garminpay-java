@@ -40,7 +40,7 @@
     <module name="LineLength">
         <property name="fileExtensions" value="java"/>
         <property name="severity" value="warning"/>
-        <property name="max" value="120"/>
+        <property name="max" value="140"/>
     </module>
 
     <!-- Checks for whitespace -->

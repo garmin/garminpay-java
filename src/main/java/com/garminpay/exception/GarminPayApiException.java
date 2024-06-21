@@ -1,5 +1,6 @@
 package com.garminpay.exception;
 
+import com.garminpay.model.response.ErrorResponse;
 import lombok.Getter;
 
 /**
@@ -15,54 +16,43 @@ public class GarminPayApiException extends GarminPayBaseException {
     private final String details;
     private final String created;
     private final String requestId;
+    private final String cfRay;
 
     /**
      * Constructs a new GarminPayApiException with the specified details.
+     * Only to be called when Apache HTTP Client encounters an error, otherwise call a constructor with better details.
      *
-     * @param path        The path of the API endpoint that caused the exception.
-     * @param status      The HTTP status code returned by the API.
-     * @param summary     A brief summary of the error.
-     * @param description A detailed description of the error.
-     * @param details     Additional details about the error.
-     * @param created     The timestamp when the error occurred.
-     * @param requestId   The unique request ID associated with the error.
-     * @param message     The detail message explaining the reason for the exception.
+     * @param path    The path of the API endpoint that caused the exception.
+     * @param message The detail message explaining the reason for the exception.
      */
-    public GarminPayApiException(String path, Integer status, String summary, String description,
-                                 String details, String created, String requestId, String message) {
+    public GarminPayApiException(String path, String message) {
         super(message);
         this.path = path;
-        this.status = status;
-        this.summary = summary;
-        this.description = description;
-        this.details = details;
-        this.created = created;
-        this.requestId = requestId;
+        this.status = null;
+        this.summary = null;
+        this.description = null;
+        this.details = null;
+        this.created = null;
+        this.requestId = null;
+        this.cfRay = null;
     }
 
     /**
-     * Constructs a new GarminPayApiException with the specified details and cause.
+     * Constructs a new GarminPayApiException with the specified details.
+     * Only to be called when an error response is successfully parsed.
      *
-     * @param path        The path of the API endpoint that caused the exception.
-     * @param status      The HTTP status code returned by the API.
-     * @param summary     A brief summary of the error.
-     * @param description A detailed description of the error.
-     * @param details     Additional details about the error.
-     * @param created     The timestamp when the error occurred.
-     * @param requestId   The unique request ID associated with the error.
-     * @param message     The detail message explaining the reason for the exception.
-     * @param cause       The cause of the exception.
+     * @param errorResponse error response returned from the API.
+     * @param cfRay         CF-RAY from the API response headers.
      */
-    public GarminPayApiException(String path, Integer status, String summary, String description,
-                                 String details, String created, String requestId, String message, Throwable cause) {
-        super(message, cause);
-        this.path = path;
-        this.status = status;
-        this.summary = summary;
-        this.description = description;
-        this.details = details;
-        this.created = created;
-        this.requestId = requestId;
+    public GarminPayApiException(ErrorResponse errorResponse, String cfRay) {
+        super(errorResponse.getMessage());
+        this.path = errorResponse.getPath();
+        this.status = errorResponse.getStatus();
+        this.summary = errorResponse.getSummary();
+        this.description = errorResponse.getDescription();
+        this.details = errorResponse.getDetails();
+        this.created = errorResponse.getCreatedTs();
+        this.requestId = errorResponse.getRequestId();
+        this.cfRay = cfRay;
     }
-
 }

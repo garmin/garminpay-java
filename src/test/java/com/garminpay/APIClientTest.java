@@ -1,11 +1,11 @@
 package com.garminpay;
 
-import com.garminpay.exception.GarminPaySDKException;
-import com.garminpay.model.response.ErrorResponse;
-import com.garminpay.model.response.RootResponse;
+import com.garminpay.exception.GarminPayApiException;
+import com.garminpay.model.dto.APIResponseDTO;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.core5.http.ClassicHttpRequest;
 import org.apache.hc.core5.http.io.HttpClientResponseHandler;
+import org.apache.hc.core5.http.io.support.ClassicRequestBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -52,16 +52,33 @@ class APIClientTest {
 
     @Test
     void canGetEndpoint() throws IOException {
-        RootResponse mockedResponse = RootResponse.builder()
+        APIResponseDTO responseSuccess = APIResponseDTO.builder()
             .status(200)
             .build();
 
-        when(httpClientMock.execute(any(ClassicHttpRequest.class), any(HttpClientResponseHandler.class))).thenReturn(mockedResponse);
+        when(httpClientMock.execute(any(ClassicHttpRequest.class), any(HttpClientResponseHandler.class))).thenReturn(responseSuccess);
 
-        RootResponse response = apiClient.get(testingURL, RootResponse.class);
+        ClassicHttpRequest request = ClassicRequestBuilder.get(testingURL).build();
 
-        assertNotNull(response, "Response should not be null");
-        assertEquals(200, response.getStatus(), "Response status code should be 200");
+        APIResponseDTO response = apiClient.send(request);
+
+        assertEquals(200, response.getStatus());
+        verify(httpClientMock, times(1)).execute(any(ClassicHttpRequest.class), any(HttpClientResponseHandler.class));
+    }
+
+    @Test
+    void canPostEndpoint() throws IOException {
+        APIResponseDTO responseSuccess = APIResponseDTO.builder()
+            .status(200)
+            .build();
+
+        when(httpClientMock.execute(any(ClassicHttpRequest.class), any(HttpClientResponseHandler.class))).thenReturn(responseSuccess);
+
+        ClassicHttpRequest request = ClassicRequestBuilder.post(testingURL).build();
+
+        APIResponseDTO response = apiClient.send(request);
+
+        assertEquals(200, response.getStatus());
         verify(httpClientMock, times(1)).execute(any(ClassicHttpRequest.class), any(HttpClientResponseHandler.class));
     }
 
@@ -70,29 +87,8 @@ class APIClientTest {
         when(httpClientMock.execute(any(ClassicHttpRequest.class), any(HttpClientResponseHandler.class)))
             .thenThrow(new IOException("Simulated Interrupt Exception"));
 
-        assertThrows(GarminPaySDKException.class, () -> apiClient.get(testingURL, ErrorResponse.class));
-    }
+        ClassicHttpRequest request = ClassicRequestBuilder.get(testingURL).build();
 
-    @Test
-    void canPostEndpoint() throws IOException {
-        RootResponse mockedResponse = RootResponse.builder()
-            .status(200)
-            .build();
-
-        when(httpClientMock.execute(any(ClassicHttpRequest.class), any(HttpClientResponseHandler.class))).thenReturn(mockedResponse);
-
-        RootResponse response = apiClient.post(testingURL, RootResponse.class, null);
-
-        assertNotNull(response, "Response should not be null");
-        assertEquals(200, response.getStatus(), "Response status code should be 200");
-        verify(httpClientMock, times(1)).execute(any(ClassicHttpRequest.class), any(HttpClientResponseHandler.class));
-    }
-
-    @Test
-    void canHandlePostIOException() throws IOException {
-        when(httpClientMock.execute(any(ClassicHttpRequest.class), any(HttpClientResponseHandler.class)))
-            .thenThrow(new IOException("Simulated Interrupt Exception"));
-
-        assertThrows(GarminPaySDKException.class, () -> apiClient.post(testingURL, RootResponse.class, null));
+        assertThrows(GarminPayApiException.class, () -> apiClient.send(request));
     }
 }
