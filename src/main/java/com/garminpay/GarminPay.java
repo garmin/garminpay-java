@@ -1,36 +1,48 @@
 package com.garminpay;
 
+import com.garminpay.client.APIClient;
+import com.garminpay.client.Client;
+import com.garminpay.client.RefreshableOauthClient;
+import com.garminpay.exception.GarminPayCredentialsException;
 import com.garminpay.model.GarminPayCardData;
 import com.garminpay.proxy.GarminPayProxy;
-import lombok.Getter;
+
+import java.nio.charset.StandardCharsets;
 
 /**
  * SDK class for handling clientId and clientSecret.
  */
 public class GarminPay {
-    @Getter
-    private static String clientId;
-    @Getter
-    private static String clientSecret;
     private static final String BASE_URL = "https://api.qa.fitpay.ninja";
-    private static final String AUTH_URL = "https://auth.qa.fitpay.ninja";
+    private static final String AUTH_URL = "https://auth.qa.fitpay.ninja/oauth/token";
+    private final GarminPayService garminPayService;
+
+    private GarminPay(String clientId, String clientSecret) {
+        byte[] credentials = (clientId + ":" + clientSecret).getBytes(StandardCharsets.UTF_8);
+        Client baseClient = new APIClient();
+        Client refreshableOauthClient = new RefreshableOauthClient(baseClient, credentials, AUTH_URL);
+
+        GarminPayProxy garminPayProxy = new GarminPayProxy(refreshableOauthClient, BASE_URL);
+
+        garminPayService = new GarminPayService(garminPayProxy);
+    }
 
     /**
      * Initializes the SDK with the given clientId and clientSecret.
      *
      * @param clientId     the client ID provided by the issuer
      * @param clientSecret the client secret provided by the issuer
+     * @return GarminPay object to be used to make method calls
      * @throws IllegalArgumentException if clientID or clientSecret is NULL
      */
-    public static void initialize(String clientId, String clientSecret) {
+    public static GarminPay initialize(String clientId, String clientSecret) {
         if (clientId == null || clientId.trim().isEmpty() || clientSecret == null || clientSecret.trim().isEmpty()) {
-            throw new IllegalArgumentException(
-                "clientId and clientSecret cannot be null or empty"
+            throw new GarminPayCredentialsException(
+                "ClientId and ClientSecret cannot be null or empty"
             );
         }
 
-        GarminPay.clientId = clientId;
-        GarminPay.clientSecret = clientSecret;
+        return new GarminPay(clientId, clientSecret);
     }
 
     /**
@@ -39,9 +51,8 @@ public class GarminPay {
      * @param garminCardDataObject The card data object to register
      * @return Deeplink url to GCM app
      */
-    public static String registerCard(GarminPayCardData garminCardDataObject) {
-        GarminPayProxy garminPayProxy = new GarminPayProxy(BASE_URL, AUTH_URL);
-        GarminPayService garminPayService = new GarminPayService(garminPayProxy);
-        return garminPayService.registerCard(garminCardDataObject, clientId, clientSecret);
+    public String registerCard(GarminPayCardData garminCardDataObject) {
+
+        return garminPayService.registerCard(garminCardDataObject);
     }
 }

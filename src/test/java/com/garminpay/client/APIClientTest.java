@@ -1,4 +1,4 @@
-package com.garminpay;
+package com.garminpay.client;
 
 import com.garminpay.exception.GarminPayApiException;
 import com.garminpay.model.dto.APIResponseDTO;
@@ -13,7 +13,6 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -22,7 +21,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class APIClientTest {
-    private APIClient apiClient;
+    private APIClient client;
     private CloseableHttpClient httpClientMock;
     private static final String testingURL = "http://testing";
 
@@ -30,24 +29,15 @@ class APIClientTest {
     void setUp() {
         httpClientMock = mock(CloseableHttpClient.class);
 
-        apiClient = APIClient.getInstance();
+        client = new APIClient();
         try {
             Field httpClientField = APIClient.class.getDeclaredField("httpClient");
             httpClientField.setAccessible(true);
-            httpClientField.set(apiClient, httpClientMock);
+            httpClientField.set(client, httpClientMock);
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
-    }
 
-    @Test
-    void canGetInstance() {
-        APIClient instance1 = APIClient.getInstance();
-        APIClient instance2 = APIClient.getInstance();
-
-        assertNotNull(instance1, "APIClient instance1 should not be null");
-        assertNotNull(instance2, "APIClient instance2 should not be null");
-        assertEquals(instance1, instance2, "Both instances should be the same");
     }
 
     @Test
@@ -60,7 +50,7 @@ class APIClientTest {
 
         ClassicHttpRequest request = ClassicRequestBuilder.get(testingURL).build();
 
-        APIResponseDTO response = apiClient.send(request);
+        APIResponseDTO response = client.executeRequest(request);
 
         assertEquals(200, response.getStatus());
         verify(httpClientMock, times(1)).execute(any(ClassicHttpRequest.class), any(HttpClientResponseHandler.class));
@@ -76,7 +66,7 @@ class APIClientTest {
 
         ClassicHttpRequest request = ClassicRequestBuilder.post(testingURL).build();
 
-        APIResponseDTO response = apiClient.send(request);
+        APIResponseDTO response = client.executeRequest(request);
 
         assertEquals(200, response.getStatus());
         verify(httpClientMock, times(1)).execute(any(ClassicHttpRequest.class), any(HttpClientResponseHandler.class));
@@ -89,6 +79,6 @@ class APIClientTest {
 
         ClassicHttpRequest request = ClassicRequestBuilder.get(testingURL).build();
 
-        assertThrows(GarminPayApiException.class, () -> apiClient.send(request));
+        assertThrows(GarminPayApiException.class, () -> client.executeRequest(request));
     }
 }

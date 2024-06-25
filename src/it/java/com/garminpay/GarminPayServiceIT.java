@@ -23,7 +23,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class GarminPayServiceIT extends BaseIT {
-    private final GarminPayProxy garminPayProxy = new GarminPayProxy("http://localhost:" + BaseIT.wireMockServer.port(), "http://localhost:" + BaseIT.wireMockServer.port());
+    private final GarminPayProxy garminPayProxy = new GarminPayProxy(BaseIT.client, TESTING_URL);
     private final GarminPayService garminPayService = new GarminPayService(garminPayProxy);
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -71,7 +71,7 @@ class GarminPayServiceIT extends BaseIT {
                 .withBody(objectMapper.writeValueAsString(registerCardResponse))));
 
 
-        String deepLink = garminPayService.registerCard(TestUtils.TESTING_CARD_DATA, clientID, clientSecret);
+        String deepLink = garminPayService.registerCard(TestUtils.TESTING_CARD_DATA);
 
         assertEquals(deepLink, registerCardResponse.getDeepLinkUrl());
     }
