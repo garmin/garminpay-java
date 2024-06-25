@@ -4,7 +4,6 @@ import com.garminpay.encryption.EncryptionService;
 import com.garminpay.exception.GarminPayEncryptionException;
 import com.garminpay.model.GarminPayCardData;
 import com.garminpay.model.response.ExchangeKeysResponse;
-import com.garminpay.model.response.OAuthTokenResponse;
 import com.garminpay.model.response.RegisterCardResponse;
 import com.garminpay.proxy.GarminPayProxy;
 import com.nimbusds.jose.JOSEException;
@@ -26,17 +25,10 @@ class GarminPayService {
     /**
      * Registers a card with the Garmin Pay platform.
      *
-     * @param clientId will be removed
-     * @param clientSecret will be removed
      * @param garminPayCardData Card to be registered
      * @return String containing a deep link url to the Garmin Connect Mobile app
      */
-    public String registerCard(GarminPayCardData garminPayCardData, String clientId, String clientSecret) {
-        //TODO: Reformat and move OAuthToken to be called initially on config / in API Client? - See PLAT-14297
-
-        // * Get oAuthToken
-        OAuthTokenResponse response = garminPayProxy.getOAuthAccessToken(clientId, clientSecret);
-
+    public String registerCard(GarminPayCardData garminPayCardData) {
         // * Generate a new key
         ECKey key;
         try {
@@ -57,8 +49,7 @@ class GarminPayService {
             );
         }
 
-        //TODO: Once APIClient is refactored we should not have to pass OAuthToken in here - See PLAT-14297
-        ExchangeKeysResponse exchangeKeysResponse = garminPayProxy.exchangeKeys(response.getAccessToken(), clientPublicKey);
+        ExchangeKeysResponse exchangeKeysResponse = garminPayProxy.exchangeKeys(clientPublicKey);
 
         // * Obtain shared secret
         String serverPublicKey = exchangeKeysResponse.getServerPublicKey();
@@ -71,10 +62,7 @@ class GarminPayService {
             garminPayCardData, secretKey, exchangeKeysResponse.getKeyId()
         );
 
-        //TODO: Once APIClient is refactored we should not have to pass OAuthToken in here - See PLAT-14297
-        RegisterCardResponse registerCardResponse = garminPayProxy.registerCard(
-            response.getAccessToken(), encryptedCardData
-        );
+        RegisterCardResponse registerCardResponse = garminPayProxy.registerCard(encryptedCardData);
 
         return registerCardResponse.getDeepLinkUrl();
     }
