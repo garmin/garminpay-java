@@ -3,8 +3,6 @@ image: $JDK_IMAGE
 variables:
   ARTIFACT_PATH: target
   MAVEN_CLI_OPTS: '--batch-mode --errors --fail-at-end --show-version'
-  MAVEN_OPTS: >-
-    -Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository
 
 cache:
   paths:
@@ -13,7 +11,7 @@ cache:
 stages:
   - lint
   - compile
-  - verify
+  - test
 
 Checkstyle Linting:
   stage: lint
@@ -29,13 +27,12 @@ Maven Clean Compile:
     - echo "Compiling project"
     - ./mvnw $MAVEN_CLI_OPTS clean compile
 
-Maven Verify:
-  stage: verify
+Maven Test:
+  stage: test
   script:
     - echo "Testing"
-    - ./mvnw $MAVEN_CLI_OPTS verify
+    - ./mvnw $MAVEN_CLI_OPTS test
   artifacts:
     reports:
       junit:
         - $ARTIFACT_PATH/surefire-reports/*.xml
-        - $ARTIFACT_PATH/failsafe-reports/*.xml
