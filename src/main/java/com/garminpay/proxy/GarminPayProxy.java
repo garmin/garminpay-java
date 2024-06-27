@@ -21,14 +21,17 @@ import org.apache.hc.core5.http.HttpHeaders;
 import org.apache.hc.core5.http.io.entity.StringEntity;
 import org.apache.hc.core5.http.io.support.ClassicRequestBuilder;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * GarminPayProxy class responsible for calling the Garmin Pay API.
  */
 public class GarminPayProxy {
-    private final String baseUrl;
-
     private final Client client;
     private final ObjectMapper objectMapper;
+    private Map<String, RootResponse.HalLink> links = new HashMap<>();
 
 
     /**
@@ -38,10 +41,12 @@ public class GarminPayProxy {
      * @param baseUrl URL to use for base Garmin Pay endpoints
      */
     public GarminPayProxy(Client client, String baseUrl) {
-        this.baseUrl = baseUrl;
-
         this.client = client;
         this.objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+        // Get links from Garmin Pay root endpoint
+        this.links.put("self", RootResponse.HalLink.builder().href(baseUrl).build());
+        this.refreshRootLinks();
     }
 
     /**
@@ -51,7 +56,9 @@ public class GarminPayProxy {
      * @throws GarminPayApiException if the API response indicates a failure (status code < 200 or >= 300).
      */
     public RootResponse getRootEndpoint() {
-        ClassicHttpRequest request = ClassicRequestBuilder.get(baseUrl).build();
+        ClassicHttpRequest request = ClassicRequestBuilder
+            .get(links.get("self").getHref())
+            .build();
         APIResponseDTO response = client.executeRequest(request);
 
         return parseResponse(response, RootResponse.class);
@@ -64,7 +71,9 @@ public class GarminPayProxy {
      * @throws GarminPayApiException if the API response indicates a failure (status code < 200 or >= 300).
      */
     public HealthResponse getHealthStatus() {
-        ClassicHttpRequest request = ClassicRequestBuilder.get(baseUrl + "/health").build();
+        ClassicHttpRequest request = ClassicRequestBuilder
+            .get(links.get("health").getHref())
+            .build();
         APIResponseDTO response = client.executeRequest(request);
 
         return parseResponse(response, HealthResponse.class);
@@ -83,7 +92,8 @@ public class GarminPayProxy {
             .clientPublicKey(publicKey)
             .build();
 
-        ClassicHttpRequest request = ClassicRequestBuilder.post(baseUrl + "/config/encryptionKeys")
+        ClassicHttpRequest request = ClassicRequestBuilder
+            .post(links.get("encryptionKeys").getHref())
             .setEntity(createRequestEntity(requestModel))
             .setHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.toString())
             .build();
@@ -104,7 +114,8 @@ public class GarminPayProxy {
             .encryptedData(encryptedCardData)
             .build();
 
-        ClassicHttpRequest request = ClassicRequestBuilder.post(baseUrl + "/paymentCards")
+        ClassicHttpRequest request = ClassicRequestBuilder
+            .post(links.get("paymentCards").getHref())
             .setEntity(createRequestEntity(requestModel))
             .setHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.toString())
             .build();
@@ -148,6 +159,22 @@ public class GarminPayProxy {
                 .build();
 
             throw new GarminPayApiException(errorResponse, responseDTO.findCFRay().orElse(null));
+        }
+    }
+
+    /**
+     * Refreshes the links to be used by proxy methods.
+     */
+    public void refreshRootLinks() {
+        Map<String, RootResponse.HalLink> responseLinks = getRootEndpoint().getLinks();
+
+        String[] desiredKeys = {"self", "health", "encryptionKeys", "paymentCards"};
+        boolean allExist = Arrays.stream(desiredKeys).allMatch(responseLinks::containsKey);
+
+        if (!allExist) {
+            throw new GarminPayApiException("Missing required links for GarminPay, please contact the GarminPay team.");
+        } else {
+            this.links = new HashMap<>(responseLinks);
         }
     }
 }

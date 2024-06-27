@@ -55,4 +55,21 @@ public class GarminPayApiException extends GarminPayBaseException {
         this.requestId = errorResponse.getRequestId();
         this.cfRay = cfRay;
     }
+
+    /**
+     * Constructs a new GarminPayApiException.
+     *
+     * @param message message thrown from the exception.
+     */
+    public GarminPayApiException(String message) {
+        super(message);
+        this.path = null;
+        this.status = null;
+        this.summary = null;
+        this.description = null;
+        this.details = null;
+        this.created = null;
+        this.requestId = null;
+        this.cfRay = null;
+    }
 }
