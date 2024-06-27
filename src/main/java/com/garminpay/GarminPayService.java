@@ -29,6 +29,8 @@ class GarminPayService {
      * @return String containing a deep link url to the Garmin Connect Mobile app
      */
     public String registerCard(GarminPayCardData garminPayCardData) {
+        garminPayProxy.refreshRootLinks();
+
         // * Generate a new key
         ECKey key;
         try {

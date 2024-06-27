@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.garminpay.TestUtils;
 import com.garminpay.client.RefreshableOauthClient;
 import com.garminpay.exception.GarminPayApiException;
+import com.garminpay.exception.GarminPaySDKException;
 import com.garminpay.model.dto.APIResponseDTO;
 import com.garminpay.model.response.ErrorResponse;
 import com.garminpay.model.response.ExchangeKeysResponse;
@@ -17,7 +18,7 @@ import org.apache.hc.core5.http.message.BasicHeader;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -25,8 +26,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class GarminPayProxyTest {
@@ -37,20 +36,54 @@ class GarminPayProxyTest {
         new BasicHeader("CF-RAY", "testing-cf-ray")
     };
 
+    private static final String testingUrl = "http://localhost";
+    private final Map<String, RootResponse.HalLink> links = new HashMap<>();
+
     @BeforeEach
-    void setUp() {
+    void setUp() throws JsonProcessingException {
         refreshableOauthClient = mock(RefreshableOauthClient.class);
-        garminPayProxy = new GarminPayProxy(refreshableOauthClient,"http://localhost");
+
+        links.put("self", RootResponse.HalLink.builder().href(testingUrl).build());
+        links.put("health", RootResponse.HalLink.builder().href(testingUrl + "/health").build());
+        links.put("encryptionKeys", RootResponse.HalLink.builder().href(testingUrl + "/config/encryptionKeys").build());
+        links.put("paymentCards", RootResponse.HalLink.builder().href(testingUrl + "/paymentCards").build());
+
+        RootResponse successResponse = RootResponse.builder()
+            .links(new HashMap<>(links))
+            .build();
+
+        APIResponseDTO responseDTO = APIResponseDTO.builder()
+            .status(HttpStatus.SC_OK)
+            .content(objectMapper.writeValueAsString(successResponse))
+            .headers(testingHeaders)
+            .build();
+
+        when(refreshableOauthClient.executeRequest(any())).thenReturn(responseDTO);
+
+        garminPayProxy = new GarminPayProxy(refreshableOauthClient, testingUrl);
+    }
+
+    @Test
+    void testWillFailWhenMissingRootLinks() throws JsonProcessingException {
+        RootResponse emptyRootResponse = RootResponse.builder()
+            .links(new HashMap<>())
+            .build();
+
+        APIResponseDTO responseDTO = APIResponseDTO.builder()
+            .status(HttpStatus.SC_OK)
+            .content(objectMapper.writeValueAsString(emptyRootResponse))
+            .headers(testingHeaders)
+            .build();
+
+        when(refreshableOauthClient.executeRequest(any())).thenReturn(responseDTO);
+
+        assertThrows(GarminPayApiException.class, () -> new GarminPayProxy(refreshableOauthClient, testingUrl));
     }
 
     @Test
     void testGetRootEndpointSuccess() throws JsonProcessingException {
-        Map<String, RootResponse.HalLink> mockLinks = Collections.singletonMap(
-            "self", RootResponse.HalLink.builder().href("https://testingHref").build()
-        );
-
         RootResponse successResponse = RootResponse.builder()
-            .links(mockLinks)
+            .links(new HashMap<>(links))
             .build();
 
         APIResponseDTO responseDTO = APIResponseDTO.builder()
@@ -64,7 +97,6 @@ class GarminPayProxyTest {
         RootResponse rootResponse = garminPayProxy.getRootEndpoint();
 
         assertEquals(successResponse.getLinks(), rootResponse.getLinks());
-        verify(refreshableOauthClient, times(1)).executeRequest(any());
     }
 
     @Test
@@ -128,7 +160,6 @@ class GarminPayProxyTest {
         HealthResponse healthResponse = garminPayProxy.getHealthStatus();
 
         assertEquals("OK", healthResponse.getHealthStatus());
-        verify(refreshableOauthClient, times(1)).executeRequest(any());
     }
 
     @Test
@@ -194,7 +225,6 @@ class GarminPayProxyTest {
 
         assertEquals(exchangeKeysResponse.getKeyId(), successResponse.getKeyId());
         assertEquals(exchangeKeysResponse.getServerPublicKey(), successResponse.getServerPublicKey());
-        verify(refreshableOauthClient, times(1)).executeRequest(any());
     }
 
     @Test
@@ -239,7 +269,6 @@ class GarminPayProxyTest {
         RegisterCardResponse deepLinkResponse = garminPayProxy.registerCard("mockEncryptedCardData");
 
         assertEquals(testingDeepLinkUrl, deepLinkResponse.getDeepLinkUrl());
-        verify(refreshableOauthClient, times(1)).executeRequest(any());
     }
 
     @Test
