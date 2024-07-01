@@ -15,6 +15,7 @@ import com.garminpay.model.request.CreateECCEncryptionKeyRequest;
 import com.garminpay.model.response.RootResponse;
 import com.garminpay.model.request.CreatePaymentCardRequest;
 import com.garminpay.model.response.RegisterCardResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.core5.http.ClassicHttpRequest;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpHeaders;
@@ -28,7 +29,9 @@ import java.util.Map;
 /**
  * GarminPayProxy class responsible for calling the Garmin Pay API.
  */
+@Slf4j
 public class GarminPayProxy {
+    private static final String[] EXPECTED_LINK_RELS = new String[]{"self", "health", "encryptionKeys", "paymentCards"};
     private final Client client;
     private final ObjectMapper objectMapper;
     private Map<String, RootResponse.HalLink> links = new HashMap<>();
@@ -56,6 +59,7 @@ public class GarminPayProxy {
      * @throws GarminPayApiException if the API response indicates a failure (status code < 200 or >= 300).
      */
     public RootResponse getRootEndpoint() {
+        log.debug("Retrieving root endpoint");
         ClassicHttpRequest request = ClassicRequestBuilder
             .get(links.get("self").getHref())
             .build();
@@ -71,6 +75,7 @@ public class GarminPayProxy {
      * @throws GarminPayApiException if the API response indicates a failure (status code < 200 or >= 300).
      */
     public HealthResponse getHealthStatus() {
+        log.debug("Retrieving health status");
         ClassicHttpRequest request = ClassicRequestBuilder
             .get(links.get("health").getHref())
             .build();
@@ -88,6 +93,7 @@ public class GarminPayProxy {
      * @throws GarminPayApiException if the API response indicates a failure (status code < 200 or >= 300).
      */
     public ExchangeKeysResponse exchangeKeys(String publicKey) {
+        log.debug("Exchanging keys");
         CreateECCEncryptionKeyRequest requestModel = CreateECCEncryptionKeyRequest.builder()
             .clientPublicKey(publicKey)
             .build();
@@ -110,6 +116,7 @@ public class GarminPayProxy {
      * @return sessionResponse reference data for the ephemeral session
      */
     public RegisterCardResponse registerCard(String encryptedCardData) {
+        log.debug("Registering card");
         CreatePaymentCardRequest requestModel = CreatePaymentCardRequest.builder()
             .encryptedData(encryptedCardData)
             .build();
@@ -126,10 +133,12 @@ public class GarminPayProxy {
     }
 
     private <T> StringEntity createRequestEntity(T requestModel) {
+        log.debug("Creating request entity");
         String serializedRequestBody;
         try {
             serializedRequestBody = objectMapper.writeValueAsString(requestModel);
         } catch (JsonProcessingException e) {
+            log.warn("Failed to serialize request body");
             throw new GarminPaySDKException(
                 "Failed to serialize " + requestModel.getClass().getSimpleName() + " when trying to send data to GarminPay."
             );
@@ -139,20 +148,28 @@ public class GarminPayProxy {
     }
 
     private <T> T parseResponse(APIResponseDTO responseDTO, Class<T> responseClass) {
+        log.debug("Parsing response from Client to class {}", responseClass.getName());
         // If status is in [200, 300) range, parse the desired response class
         if (responseDTO.getStatus() >= 200 && responseDTO.getStatus() < 300) {
             try {
                 return objectMapper.readValue(responseDTO.getContent(), responseClass);
             } catch (JsonProcessingException e) {
+                log.warn("Found an acceptable response status code but encountered unknown response body."
+                        + " status: {}, x-request-id: {}, CF-RAY: {}",
+                    responseDTO.getStatus(), responseDTO.findXRequestId().orElse(""), responseDTO.findCFRay().orElse("null")
+                );
                 throw new GarminPaySDKException("Failed to parse response entity.");
             }
         }
 
         try {
+            log.warn("Response from Client contained an invalid status code. status: {}, x-request-id: {}, CF-RAY: {}",
+                responseDTO.getStatus(), responseDTO.findXRequestId().orElse(""), responseDTO.findCFRay().orElse("null")
+            );
             ErrorResponse errorResponse = objectMapper.readValue(responseDTO.getContent(), ErrorResponse.class);
-
             throw new GarminPayApiException(errorResponse, responseDTO.findCFRay().orElse(null));
         } catch (JsonProcessingException e) {
+            log.warn("Unable to parse error response", e);
             ErrorResponse errorResponse = ErrorResponse.builder()
                 .status(responseDTO.getStatus())
                 .path(responseDTO.getPath())
@@ -166,12 +183,13 @@ public class GarminPayProxy {
      * Refreshes the links to be used by proxy methods.
      */
     public void refreshRootLinks() {
+        log.debug("Refreshing root links");
         Map<String, RootResponse.HalLink> responseLinks = getRootEndpoint().getLinks();
 
-        String[] desiredKeys = {"self", "health", "encryptionKeys", "paymentCards"};
-        boolean allExist = Arrays.stream(desiredKeys).allMatch(responseLinks::containsKey);
+        boolean allExist = Arrays.stream(EXPECTED_LINK_RELS).allMatch(responseLinks::containsKey);
 
         if (!allExist) {
+            log.warn("Required links for GarminPay were not found");
             throw new GarminPayApiException("Missing required links for GarminPay, please contact the GarminPay team.");
         } else {
             this.links = new HashMap<>(responseLinks);

@@ -9,6 +9,7 @@ import com.garminpay.model.dto.APIResponseDTO;
 import com.garminpay.model.request.OAuthTokenRequest;
 import com.garminpay.model.response.ErrorResponse;
 import com.garminpay.model.response.OAuthTokenResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.core5.http.ClassicHttpRequest;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.Header;
@@ -19,6 +20,7 @@ import org.apache.hc.core5.http.message.BasicHeader;
 
 import java.util.Base64;
 
+@Slf4j
 public class RefreshableOauthClient extends APIClient {
     private final Client wrappedClient;
     private final byte[] credentials;
@@ -46,17 +48,24 @@ public class RefreshableOauthClient extends APIClient {
 
     @Override
     public APIResponseDTO executeRequest(ClassicHttpRequest request) {
+        log.debug("Adding authentication headers to request before execution");
+
         // Add new header containing auth token
         Header authHeader = new BasicHeader(HttpHeaders.AUTHORIZATION, "Bearer " + this.authToken, true);
         request.addHeader(authHeader);
 
         APIResponseDTO response = wrappedClient.executeRequest(request);
+        log.debug("Received response from {} method to {}. status: {}, x-request-id: {}, CF-RAY: {}",
+            request.getMethod(), request.getPath(), response.getStatus(), response.findXRequestId(), response.findCFRay()
+        );
 
         if (response.getStatus() == 401) { // If 401, execute retry flow
+            log.debug("Invalid OAuth token, refreshing");
             this.refreshToken();
 
             request.setHeader(new BasicHeader(HttpHeaders.AUTHORIZATION, "Bearer " + this.authToken, true));
 
+            log.debug("Executing original request with new OAuth token");
             return wrappedClient.executeRequest(request);
         }
 
@@ -64,14 +73,16 @@ public class RefreshableOauthClient extends APIClient {
     }
 
     private void refreshToken() {
+        log.debug("Refreshing OAuth token");
         ClassicHttpRequest request = this.buildOAuthRequest();
         APIResponseDTO responseDTO = this.wrappedClient.executeRequest(request);
 
         // If response status is not 2xx client credentials may be invalid
-        // TODO: This does not accurately show an issue with the credentials and the GP service may just be down
-        // TODO: See PLAT-14381 on how we can better implement this
         if (responseDTO.getStatus() < 200 || responseDTO.getStatus() > 299) {
             try {
+                log.warn("Refresh token failed with status: {}, x-request-id: {}, CF-RAY: {}",
+                    responseDTO.getStatus(), responseDTO.findXRequestId().orElse(""), responseDTO.findCFRay().orElse("null")
+                );
                 ErrorResponse errorResponse = objectMapper.readValue(responseDTO.getContent(), ErrorResponse.class);
 
                 throw new GarminPayCredentialsException(
@@ -80,6 +91,7 @@ public class RefreshableOauthClient extends APIClient {
                     responseDTO.findCFRay().orElse(null)
                 );
             } catch (JsonProcessingException e) {
+                log.warn("Unable to parse error response when refreshing OAuth token", e);
                 ErrorResponse errorResponse = ErrorResponse.builder()
                     .status(responseDTO.getStatus())
                     .path(responseDTO.getPath())
@@ -97,16 +109,21 @@ public class RefreshableOauthClient extends APIClient {
         try {
             OAuthTokenResponse oAuthTokenResponse = objectMapper.readValue(responseDTO.getContent(), OAuthTokenResponse.class);
             if (oAuthTokenResponse.getAccessToken() == null) {
+                log.warn("Refresh token request executed but the token was null. status: {}, x-request-id: {}, CF-RAY: {}",
+                    responseDTO.getStatus(), responseDTO.findXRequestId().orElse(""), responseDTO.findCFRay().orElse("null")
+                );
                 throw new GarminPaySDKException("Found a response but the token was either null or did not refresh");
             }
 
             this.authToken = oAuthTokenResponse.getAccessToken();
         } catch (JsonProcessingException e) {
+            log.warn("Unable to parse error response", e);
             throw new GarminPaySDKException("Failed to read OAuth token response when generating a new OAuth token");
         }
     }
 
     private ClassicHttpRequest buildOAuthRequest() {
+        log.debug("Building OAuth request");
         String encodedCredentials = Base64.getEncoder().encodeToString(credentials);
 
         OAuthTokenRequest requestModel = OAuthTokenRequest.builder()
@@ -117,6 +134,7 @@ public class RefreshableOauthClient extends APIClient {
         try {
             serializedRequestBody = objectMapper.writeValueAsString(requestModel);
         } catch (JsonProcessingException e) {
+            log.warn("Failed to serialize OAuth token request when refreshing token");
             throw new GarminPaySDKException("Failed to serialize request when generating a new OAuth token");
         }
 

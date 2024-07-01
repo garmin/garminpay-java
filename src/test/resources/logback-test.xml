@@ -1,0 +1,16 @@
+<configuration>
+    <property name="log.level" value="INFO" />
+
+    <!-- Console appender -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="${log.level}">
+        <appender-ref ref="CONSOLE" />
+    </root>
+
+    <logger name="com.garminpay" level="DEBUG" />
+</configuration>

@@ -3,6 +3,7 @@ package com.garminpay.model.dto;
 import com.garminpay.exception.GarminPayApiException;
 import lombok.Builder;
 import lombok.Value;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.apache.hc.core5.http.Header;
 import org.apache.hc.core5.http.ParseException;
@@ -14,6 +15,7 @@ import java.util.Optional;
 
 @Value
 @Builder
+@Slf4j
 public class APIResponseDTO {
     int status;
     String content;
@@ -28,6 +30,7 @@ public class APIResponseDTO {
      * @return An APIResponseDTO object
      */
     public static APIResponseDTO fromHttpResponse(ClassicHttpResponse response, String path) {
+        log.debug("Mapping {} http response to DTO", path);
         try {
             return APIResponseDTO.builder()
                 .status(response.getCode())
@@ -36,6 +39,7 @@ public class APIResponseDTO {
                 .path(path)
                 .build();
         } catch (ParseException | IOException e) {
+            log.warn("Failed to parse http response to DTO", e);
             throw new GarminPayApiException(path, "Failed to build APIResponseDTO from ClassicHttpResponse");
         }
     }
@@ -49,6 +53,21 @@ public class APIResponseDTO {
         if (headers != null) {
             return Arrays.stream(headers)
                 .filter(header -> "CF-RAY".equalsIgnoreCase(header.getName()))
+                .findFirst()
+                .map(Header::getValue);
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Filters headers of a response object to find and return the x-request-id field if it exists.
+     *
+     * @return x-request-id
+     */
+    public Optional<String> findXRequestId() {
+        if (headers != null) {
+            return Arrays.stream(headers)
+                .filter(header -> "x-request-id".equalsIgnoreCase(header.getName()))
                 .findFirst()
                 .map(Header::getValue);
         }
