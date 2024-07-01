@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.garminpay.TestUtils;
 import com.garminpay.client.RefreshableOauthClient;
 import com.garminpay.exception.GarminPayApiException;
-import com.garminpay.exception.GarminPaySDKException;
 import com.garminpay.model.dto.APIResponseDTO;
 import com.garminpay.model.response.ErrorResponse;
 import com.garminpay.model.response.ExchangeKeysResponse;

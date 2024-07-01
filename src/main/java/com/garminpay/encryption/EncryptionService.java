@@ -22,12 +22,14 @@ import java.security.spec.X509EncodedKeySpec;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 
 import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
 
+@Slf4j
 public class EncryptionService {
     private static final JWEAlgorithm ALGORITHM = JWEAlgorithm.A256GCMKW;
     private final ObjectMapper mapper = new ObjectMapper();
@@ -39,7 +41,8 @@ public class EncryptionService {
      * @param clientPrivateKey client private key represented as a String
      * @return SecretKey object that represents a keyAgreement between the two keys
      */
-    public SecretKey generateSharedSecret(@NonNull String serverPublicKey, @NonNull String clientPrivateKey) {
+    public SecretKey generateKeyAgreement(@NonNull String serverPublicKey, @NonNull String clientPrivateKey) {
+        log.debug("Generating key agreement from provided keys");
         try {
             Key publicKey = getPublicKey(serverPublicKey);
             Key privateKey = getPrivateKey(clientPrivateKey);
@@ -50,6 +53,7 @@ public class EncryptionService {
 
             return keyAgreement.generateSecret("AES");
         } catch (NoSuchAlgorithmException | InvalidKeyException e) {
+            log.warn("Unable to generate key agreement");
             throw new GarminPayEncryptionException("Unable to generate a new key agreement");
         }
     }
@@ -65,12 +69,14 @@ public class EncryptionService {
     public String encryptCardData(
         @NonNull GarminPayCardData garminPayCardData, @NonNull SecretKey secretKey, @NonNull String keyId
     ) {
+        log.debug("Encrypting card data");
         try {
             AESEncrypter encryptor = new AESEncrypter(secretKey);
 
             String serializedCardData = serializeCardData(garminPayCardData);
             Payload payload = new Payload(serializedCardData);
 
+            log.debug("Building jwe object");
             JWEObject jwe = new JWEObject(
                 new JWEHeader.Builder(ALGORITHM, EncryptionMethod.A256GCM)
                     .contentType("application/jwe")
@@ -81,6 +87,7 @@ public class EncryptionService {
             jwe.encrypt(encryptor);
             return jwe.serialize();
         } catch (JOSEException e) {
+            log.warn("Unable to encrypt card data");
             throw new GarminPayEncryptionException("Unable to encrypt card data with provided secret key");
         }
     }
@@ -94,8 +101,10 @@ public class EncryptionService {
     private String serializeCardData(GarminPayCardData garminPayCardData) {
         try {
             // map and serialize CardData object
+            log.debug("Serializing card data");
             return mapper.writeValueAsString(garminPayCardData);
         } catch (JsonProcessingException e) {
+            log.warn("Unable to serialize card data");
             throw new GarminPayEncryptionException("Could not map or serialize card data");
         }
     }
@@ -107,12 +116,14 @@ public class EncryptionService {
      * @return Java Security Key
      */
     private Key getPublicKey(String publicKey) {
+        log.debug("Getting public key from provided key");
         try {
             KeyFactory kf = KeyFactory.getInstance("EC", BouncyCastleProviderSingleton.getInstance());
 
             X509EncodedKeySpec keySpec = new X509EncodedKeySpec(Hex.decodeHex(publicKey.toCharArray()));
             return kf.generatePublic(keySpec);
         } catch (NoSuchAlgorithmException | InvalidKeySpecException | DecoderException e) {
+            log.warn("Unable to get public key from provided key");
             throw new GarminPayEncryptionException("Unable to decrypt public key");
         }
     }
@@ -124,12 +135,14 @@ public class EncryptionService {
      * @return Java Security Key
      */
     private Key getPrivateKey(String privateKey) {
+        log.debug("Getting public key from provided key");
         try {
             KeyFactory kf = KeyFactory.getInstance("EC", BouncyCastleProviderSingleton.getInstance());
 
             PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(Hex.decodeHex(privateKey.toCharArray()));
             return kf.generatePrivate(keySpec);
         } catch (NoSuchAlgorithmException | InvalidKeySpecException | DecoderException e) {
+            log.warn("Unable to get private key from provided key");
             throw new GarminPayEncryptionException("Unable to decrypt private key");
         }
     }

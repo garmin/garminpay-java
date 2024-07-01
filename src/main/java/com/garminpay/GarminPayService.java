@@ -2,6 +2,7 @@ package com.garminpay;
 
 import com.garminpay.encryption.EncryptionService;
 import com.garminpay.exception.GarminPayEncryptionException;
+import com.garminpay.exception.GarminPaySDKException;
 import com.garminpay.model.GarminPayCardData;
 import com.garminpay.model.response.ExchangeKeysResponse;
 import com.garminpay.model.response.RegisterCardResponse;
@@ -10,10 +11,12 @@ import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.jwk.Curve;
 import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jose.jwk.gen.ECKeyGenerator;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
 
 import javax.crypto.SecretKey;
 
+@Slf4j
 class GarminPayService {
     private final GarminPayProxy garminPayProxy;
     private final EncryptionService encryptionService = new EncryptionService();
@@ -32,32 +35,27 @@ class GarminPayService {
         garminPayProxy.refreshRootLinks();
 
         // * Generate a new key
-        ECKey key;
-        try {
-            ECKeyGenerator generator = new ECKeyGenerator(Curve.P_256);
-             key = generator.generate();
-        } catch (JOSEException e) {
-            throw new GarminPayEncryptionException("Failed to generate client key", e);
-        }
-
+        log.debug("Generating new key");
         String clientPublicKey;
         String clientPrivateKey;
         try {
+            ECKey key;
+            ECKeyGenerator generator = new ECKeyGenerator(Curve.P_256);
+            key = generator.generate();
+
             clientPublicKey = String.valueOf(Hex.encodeHex(key.toPublicKey().getEncoded()));
             clientPrivateKey = String.valueOf(Hex.encodeHex(key.toPrivateKey().getEncoded()));
         } catch (JOSEException e) {
-            throw new GarminPayEncryptionException(
-                "ECC key pair generation failed. Could not get public or private ECKeys"
-            );
+            log.warn("Failed to generate key");
+            throw new GarminPayEncryptionException("Failed to generate client key", e);
         }
 
         ExchangeKeysResponse exchangeKeysResponse = garminPayProxy.exchangeKeys(clientPublicKey);
 
         // * Obtain shared secret
-        String serverPublicKey = exchangeKeysResponse.getServerPublicKey();
-
-        SecretKey secretKey = encryptionService.generateSharedSecret(
-            serverPublicKey, clientPrivateKey
+        SecretKey secretKey = encryptionService.generateKeyAgreement(
+            exchangeKeysResponse.getServerPublicKey(),
+            clientPrivateKey
         );
 
         String encryptedCardData = encryptionService.encryptCardData(
@@ -66,6 +64,12 @@ class GarminPayService {
 
         RegisterCardResponse registerCardResponse = garminPayProxy.registerCard(encryptedCardData);
 
-        return registerCardResponse.getDeepLinkUrl();
+        if (registerCardResponse != null
+            && registerCardResponse.getDeepLinkUrl() != null
+            && !registerCardResponse.getDeepLinkUrl().isEmpty()) {
+            return registerCardResponse.getDeepLinkUrl();
+        }
+        log.warn("Expected deeplink URL was null or empty");
+        throw new GarminPaySDKException("Expected deeplink URL was null or empty");
     }
 }
