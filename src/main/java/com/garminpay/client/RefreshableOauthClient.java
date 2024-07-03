@@ -55,8 +55,9 @@ public class RefreshableOauthClient extends APIClient {
         request.addHeader(authHeader);
 
         APIResponseDTO response = wrappedClient.executeRequest(request);
-        log.debug("Received response from {} method to {}. status: {}, x-request-id: {}, CF-RAY: {}",
-            request.getMethod(), request.getPath(), response.getStatus(), response.findXRequestId(), response.findCFRay()
+        log.debug("Received response from {} method to {}, status: {}, x-request-id: {}, CF-RAY: {}",
+            request.getMethod(), request.getPath(),
+            response.getStatus(), response.findXRequestId().orElse(""), response.findCFRay().orElse("")
         );
 
         if (response.getStatus() == 401) { // If 401, execute retry flow
@@ -81,7 +82,7 @@ public class RefreshableOauthClient extends APIClient {
         if (responseDTO.getStatus() < 200 || responseDTO.getStatus() > 299) {
             try {
                 log.warn("Refresh token failed with status: {}, x-request-id: {}, CF-RAY: {}",
-                    responseDTO.getStatus(), responseDTO.findXRequestId().orElse(""), responseDTO.findCFRay().orElse("null")
+                    responseDTO.getStatus(), responseDTO.findXRequestId().orElse(""), responseDTO.findCFRay().orElse("")
                 );
                 ErrorResponse errorResponse = objectMapper.readValue(responseDTO.getContent(), ErrorResponse.class);
 

@@ -15,11 +15,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
 
 import javax.crypto.SecretKey;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 
 @Slf4j
 class GarminPayService {
     private final GarminPayProxy garminPayProxy;
     private final EncryptionService encryptionService = new EncryptionService();
+    private ExchangeKeysResponse exchangeKeysObject = null;
+    private SecretKey secretKey = null;
+    private static final int OVERDUE_HOURS_THRESHOLD = 4;
 
     GarminPayService(GarminPayProxy garminPayProxy) {
         this.garminPayProxy = garminPayProxy;
@@ -32,10 +38,34 @@ class GarminPayService {
      * @return String containing a deep link url to the Garmin Connect Mobile app
      */
     public String registerCard(GarminPayCardData garminPayCardData) {
-        garminPayProxy.refreshRootLinks();
+        garminPayProxy.refreshRootLinks(); // * Refresh root links for proxy
 
+        if (this.exchangeKeysObject == null || isTimestampOverdue(this.exchangeKeysObject.getCreatedTs())) {
+            refreshKeys(); // * secretKey is set in here as well
+        }
+        log.debug("Proceeding with valid keys");
+
+        RegisterCardResponse registerCardResponse = garminPayProxy.registerCard(
+            encryptionService.encryptCardData(
+                garminPayCardData,
+                secretKey,
+                exchangeKeysObject.getKeyId()
+            )
+        );
+
+        if (registerCardResponse != null
+            && registerCardResponse.getDeepLinkUrl() != null
+            && !registerCardResponse.getDeepLinkUrl().isEmpty()) {
+            return registerCardResponse.getDeepLinkUrl();
+        }
+        log.warn("Expected deeplink URL was null or empty");
+        throw new GarminPaySDKException("Expected deeplink URL was null or empty");
+    }
+
+    // * Does not check validity of keys when they are received
+    private void refreshKeys() {
         // * Generate a new key
-        log.debug("Generating new key");
+        log.debug("Refreshing key agreement with GarminPay");
         String clientPublicKey;
         String clientPrivateKey;
         try {
@@ -50,26 +80,35 @@ class GarminPayService {
             throw new GarminPayEncryptionException("Failed to generate client key", e);
         }
 
-        ExchangeKeysResponse exchangeKeysResponse = garminPayProxy.exchangeKeys(clientPublicKey);
+        // * Exchange keys
+        exchangeKeysObject = garminPayProxy.exchangeKeys(clientPublicKey);
 
         // * Obtain shared secret
-        SecretKey secretKey = encryptionService.generateKeyAgreement(
-            exchangeKeysResponse.getServerPublicKey(),
+        secretKey = encryptionService.generateKeyAgreement(
+            exchangeKeysObject.getServerPublicKey(),
             clientPrivateKey
         );
+    }
 
-        String encryptedCardData = encryptionService.encryptCardData(
-            garminPayCardData, secretKey, exchangeKeysResponse.getKeyId()
-        );
+    /**
+     * Checks a UTC timestamp to see if it is 4 or more hours overdue.
+     *
+     * @param createdTs UTC timestamp to be checked
+     * @return true if the timestamp is overdue, false otherwise
+     */
+    private boolean isTimestampOverdue(String createdTs) {
+        log.debug("Checking if key creation timestamp is 4 or more hours overdue");
 
-        RegisterCardResponse registerCardResponse = garminPayProxy.registerCard(encryptedCardData);
-
-        if (registerCardResponse != null
-            && registerCardResponse.getDeepLinkUrl() != null
-            && !registerCardResponse.getDeepLinkUrl().isEmpty()) {
-            return registerCardResponse.getDeepLinkUrl();
+        try {
+            long hoursBetween = ChronoUnit.HOURS.between(
+                Instant.now(),
+                Instant.parse(createdTs)
+            );
+            log.debug("Existing key is {} hours overdue", hoursBetween);
+            return hoursBetween >= OVERDUE_HOURS_THRESHOLD;
+        } catch (DateTimeParseException e) {
+            log.warn("Could not parse key creation timestamp: {} marking key as overdue", createdTs);
+            return true;
         }
-        log.warn("Expected deeplink URL was null or empty");
-        throw new GarminPaySDKException("Expected deeplink URL was null or empty");
     }
 }
