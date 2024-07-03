@@ -2,37 +2,86 @@ image: $JDK_IMAGE
 
 variables:
   ARTIFACT_PATH: target
-  MAVEN_CLI_OPTS: '--batch-mode --errors --fail-at-end --show-version'
-
-cache:
-  paths:
-    - .m2/repository
+  MAVEN_CLI_OPTS: '-s settings.xml --batch-mode --errors --fail-at-end --show-version'
 
 stages:
   - lint
   - compile
-  - test
+  - package
+  - release
+
+include:
+  - project: 'garmin-boulder/boulder-tools/templates'
+    file: 'maven.yml'
+
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'                 # Always run scheduled pipelines
+    - if: '$CI_PIPELINE_SOURCE == "trigger"'                  # Always run when triggered
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'      # Always run MR pipelines
+    - if: $CI_COMMIT_BRANCH == "main"
+      variables:
+        REPO: "${DEVELOP_REPO}"
+        TAG: "main"
+    - if: $CI_COMMIT_BRANCH != "main"
+      variables:
+        REPO: "${DEVELOP_REPO}"
+        TAG: "${CI_COMMIT_REF_NAME}"
+    - if: '$CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS'  # Don't run branch pipelines with open merge requests
+      when: never                                           # (run MR pipelines instead)
+    - when: always
 
 Checkstyle Linting:
   stage: lint
   script:
     - echo "Running checkstyles and linting"
     - ./mvnw $MAVEN_CLI_OPTS checkstyle:check
-  except:
-    - main
 
-Maven Clean Compile:
+Maven Compile:
   stage: compile
+  extends: .mvn-clean-compile
+  environment:
+    name: US QA
+    action: prepare
+  artifacts:
+    paths:
+      - $ARTIFACT_PATH
+  cache:
+    paths:
+      - .m2/repository
+  rules:
+    - when: always
   script:
     - echo "Compiling project"
-    - ./mvnw $MAVEN_CLI_OPTS clean compile
+    - ./mvnw $MAVEN_CLI_OPTS compile
 
-Maven Test:
-  stage: test
-  script:
-    - echo "Testing"
-    - ./mvnw $MAVEN_CLI_OPTS test
+Maven Package:
+  stage: package
+  extends: .mvn-package
+  environment:
+    name: US QA
+    action: prepare
   artifacts:
     reports:
       junit:
         - $ARTIFACT_PATH/surefire-reports/*.xml
+    paths:
+      - $ARTIFACT_PATH
+  cache:
+    paths:
+      - .m2/repository
+  rules:
+    - when: on_success
+  needs: [ Maven Compile ]
+  script:
+    - echo "Packaging project"
+    - ./mvnw $MAVEN_CLI_OPTS package
+
+Maven Deploy:
+  stage: release
+  script:
+    - echo "Deploying to GitLab Package Registry"
+    - ./mvnw $MAVEN_CLI_OPTS deploy
+  only:
+    - main
+  needs: [ Maven Package ]
