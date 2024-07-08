@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.garminpay.BaseIT;
 import com.garminpay.exception.GarminPayApiException;
+import com.garminpay.model.SDKVersion;
 import com.garminpay.model.dto.APIResponseDTO;
 import com.garminpay.model.response.HealthResponse;
 import com.github.tomakehurst.wiremock.http.Fault;
@@ -16,6 +17,7 @@ import org.apache.hc.core5.http.io.support.ClassicRequestBuilder;
 import org.apache.hc.core5.http.message.BasicHeader;
 import org.junit.jupiter.api.Test;
 
+import static com.garminpay.TestUtils.checkForHeader;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
@@ -25,8 +27,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class APIClientIT extends BaseIT {
-    APIClient apiClient = new APIClient();
     private final ObjectMapper objectMapper = new ObjectMapper();
+    APIClient apiClient = new APIClient();
 
     @Test
     void canExecuteRequest() throws JsonProcessingException {
@@ -65,4 +67,23 @@ class APIClientIT extends BaseIT {
         ClassicHttpRequest request = ClassicRequestBuilder.get(TESTING_URL + "/testing").build();
         assertThrows(GarminPayApiException.class, () -> apiClient.executeRequest(request));
     }
+
+    @Test
+    void requestHasVersionHeader() {
+        Header testVersionHeader = new BasicHeader(VERSION_HEADER_NAME, SDKVersion.VERSION);
+
+        stubFor(get(urlPathEqualTo("/testing"))
+            .willReturn(aResponse()
+                .withStatus(HttpStatus.SC_OK)
+                .withHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.toString())
+            )
+        );
+
+        ClassicHttpRequest request = ClassicRequestBuilder.get(TESTING_URL + "/testing").build();
+        apiClient.executeRequest(request);
+
+        assertTrue(checkForHeader(testVersionHeader, request.getHeaders()));
+    }
+
+
 }
