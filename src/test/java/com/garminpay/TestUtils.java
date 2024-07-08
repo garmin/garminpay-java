@@ -6,10 +6,13 @@ import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.jwk.Curve;
 import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jose.jwk.gen.ECKeyGenerator;
+import java.util.Arrays;
 import lombok.SneakyThrows;
 import org.apache.commons.codec.binary.Hex;
 
 import java.util.UUID;
+import org.apache.hc.core5.http.Header;
+import wiremock.org.apache.commons.lang3.StringUtils;
 
 public class TestUtils {
     public static final Address TESTING_ADDRESS = Address.builder()
@@ -49,5 +52,20 @@ public class TestUtils {
     @SneakyThrows(JOSEException.class)
     private static ECKey generateECKey() {
         return new ECKeyGenerator(Curve.P_256).generate();
+    }
+
+    public static boolean checkForHeader(Header expectedHeader, Header[] actualHeaders) {
+        return Arrays.stream(actualHeaders)
+            .anyMatch(
+                h -> StringUtils.equalsIgnoreCase(expectedHeader.getName(), h.getName())
+                    && StringUtils.equalsIgnoreCase(expectedHeader.getValue(), h.getValue())
+            );
+    }
+
+    public static boolean checkForHeader(String expectedHeaderName, Header[] actualHeaders) {
+        return Arrays.stream(actualHeaders)
+            .anyMatch(
+                h -> StringUtils.equalsIgnoreCase(expectedHeaderName, h.getName())
+            );
     }
 }

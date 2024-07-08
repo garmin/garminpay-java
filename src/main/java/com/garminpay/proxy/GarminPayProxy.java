@@ -7,24 +7,22 @@ import com.garminpay.client.Client;
 import com.garminpay.exception.GarminPayApiException;
 import com.garminpay.exception.GarminPaySDKException;
 import com.garminpay.model.dto.APIResponseDTO;
+import com.garminpay.model.request.CreateECCEncryptionKeyRequest;
+import com.garminpay.model.request.CreatePaymentCardRequest;
 import com.garminpay.model.response.ErrorResponse;
 import com.garminpay.model.response.ExchangeKeysResponse;
 import com.garminpay.model.response.HealthResponse;
-
-import com.garminpay.model.request.CreateECCEncryptionKeyRequest;
-import com.garminpay.model.response.RootResponse;
-import com.garminpay.model.request.CreatePaymentCardRequest;
 import com.garminpay.model.response.RegisterCardResponse;
+import com.garminpay.model.response.RootResponse;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.core5.http.ClassicHttpRequest;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpHeaders;
 import org.apache.hc.core5.http.io.entity.StringEntity;
 import org.apache.hc.core5.http.io.support.ClassicRequestBuilder;
-
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * GarminPayProxy class responsible for calling the Garmin Pay API.
