@@ -34,7 +34,7 @@ public class BaseIT {
     private static final ObjectMapper objectMapper = new ObjectMapper();
     protected static String TESTING_URL;
     protected static Client client;
-    private static WireMockServer wireMockServer;
+    protected static WireMockServer wireMockServer;
 
     @BeforeAll
     static void setUp() throws JsonProcessingException {
