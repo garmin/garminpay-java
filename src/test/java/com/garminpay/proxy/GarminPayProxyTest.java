@@ -8,18 +8,18 @@ import com.garminpay.exception.GarminPayApiException;
 import com.garminpay.model.dto.APIResponseDTO;
 import com.garminpay.model.response.ErrorResponse;
 import com.garminpay.model.response.ExchangeKeysResponse;
-import com.garminpay.model.response.RegisterCardResponse;
+import com.garminpay.model.response.HalLink;
 import com.garminpay.model.response.HealthResponse;
+import com.garminpay.model.response.RegisterCardResponse;
 import com.garminpay.model.response.RootResponse;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import org.apache.hc.core5.http.Header;
 import org.apache.hc.core5.http.HttpStatus;
 import org.apache.hc.core5.http.message.BasicHeader;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -28,24 +28,23 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class GarminPayProxyTest {
-    private RefreshableOauthClient refreshableOauthClient;
-    private GarminPayProxy garminPayProxy;
+    private static final String testingUrl = "http://localhost";
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final Header[] testingHeaders = {
         new BasicHeader("CF-RAY", "testing-cf-ray")
     };
-
-    private static final String testingUrl = "http://localhost";
-    private final Map<String, RootResponse.HalLink> links = new HashMap<>();
+    private final Map<String, HalLink> links = new HashMap<>();
+    private RefreshableOauthClient refreshableOauthClient;
+    private GarminPayProxy garminPayProxy;
 
     @BeforeEach
     void setUp() throws JsonProcessingException {
         refreshableOauthClient = mock(RefreshableOauthClient.class);
 
-        links.put("self", RootResponse.HalLink.builder().href(testingUrl).build());
-        links.put("health", RootResponse.HalLink.builder().href(testingUrl + "/health").build());
-        links.put("encryptionKeys", RootResponse.HalLink.builder().href(testingUrl + "/config/encryptionKeys").build());
-        links.put("paymentCards", RootResponse.HalLink.builder().href(testingUrl + "/paymentCards").build());
+        links.put("self", HalLink.builder().href(testingUrl).build());
+        links.put("health", HalLink.builder().href(testingUrl + "/health").build());
+        links.put("encryptionKeys", HalLink.builder().href(testingUrl + "/config/encryptionKeys").build());
+        links.put("paymentCards", HalLink.builder().href(testingUrl + "/paymentCards").build());
 
         RootResponse successResponse = RootResponse.builder()
             .links(new HashMap<>(links))

@@ -11,6 +11,7 @@ import com.garminpay.model.request.CreateECCEncryptionKeyRequest;
 import com.garminpay.model.request.CreatePaymentCardRequest;
 import com.garminpay.model.response.ErrorResponse;
 import com.garminpay.model.response.ExchangeKeysResponse;
+import com.garminpay.model.response.HalLink;
 import com.garminpay.model.response.HealthResponse;
 import com.garminpay.model.response.RegisterCardResponse;
 import com.garminpay.model.response.RootResponse;
@@ -32,7 +33,7 @@ public class GarminPayProxy {
     private static final String[] EXPECTED_LINK_RELS = new String[]{"self", "health", "encryptionKeys", "paymentCards"};
     private final Client client;
     private final ObjectMapper objectMapper;
-    private Map<String, RootResponse.HalLink> links = new HashMap<>();
+    private Map<String, HalLink> links = new HashMap<>();
 
 
     /**
@@ -46,7 +47,7 @@ public class GarminPayProxy {
         this.objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
         // Get links from Garmin Pay root endpoint
-        this.links.put("self", RootResponse.HalLink.builder().href(baseUrl).build());
+        this.links.put("self", HalLink.builder().href(baseUrl).build());
         this.refreshRootLinks();
     }
 
@@ -182,7 +183,7 @@ public class GarminPayProxy {
      */
     public void refreshRootLinks() {
         log.debug("Refreshing root links");
-        Map<String, RootResponse.HalLink> responseLinks = getRootEndpoint().getLinks();
+        Map<String, HalLink> responseLinks = getRootEndpoint().getLinks();
 
         boolean allExist = Arrays.stream(EXPECTED_LINK_RELS).allMatch(responseLinks::containsKey);
 

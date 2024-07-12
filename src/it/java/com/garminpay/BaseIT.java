@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.garminpay.client.APIClient;
 import com.garminpay.client.Client;
 import com.garminpay.client.RefreshableOauthClient;
+import com.garminpay.model.response.HalLink;
 import com.garminpay.model.response.OAuthTokenResponse;
 import com.garminpay.model.response.RootResponse;
 import com.github.tomakehurst.wiremock.WireMockServer;
@@ -29,7 +30,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 
 public class BaseIT {
 
-    protected static final Map<String, RootResponse.HalLink> links = new HashMap<>();
+    protected static final Map<String, HalLink> links = new HashMap<>();
     protected static final String VERSION_HEADER_NAME = "GP-SDK-Version";
     private static final ObjectMapper objectMapper = new ObjectMapper();
     protected static String TESTING_URL;
@@ -44,10 +45,10 @@ public class BaseIT {
 
         TESTING_URL = "http://localhost:" + wireMockServer.port();
 
-        links.put("self", RootResponse.HalLink.builder().href(TESTING_URL).build());
-        links.put("health", RootResponse.HalLink.builder().href(TESTING_URL + "/health").build());
-        links.put("encryptionKeys", RootResponse.HalLink.builder().href(TESTING_URL + "/config/encryptionKeys").build());
-        links.put("paymentCards", RootResponse.HalLink.builder().href(TESTING_URL + "/paymentCards").build());
+        links.put("self", HalLink.builder().href(TESTING_URL).build());
+        links.put("health", HalLink.builder().href(TESTING_URL + "/health").build());
+        links.put("encryptionKeys", HalLink.builder().href(TESTING_URL + "/config/encryptionKeys").build());
+        links.put("paymentCards", HalLink.builder().href(TESTING_URL + "/paymentCards").build());
 
         RootResponse rootResponse = RootResponse.builder()
             .links(new HashMap<>(links))
