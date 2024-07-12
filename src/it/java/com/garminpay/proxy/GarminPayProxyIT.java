@@ -6,29 +6,29 @@ import com.garminpay.BaseIT;
 import com.garminpay.TestUtils;
 import com.garminpay.exception.GarminPayApiException;
 import com.garminpay.model.response.ErrorResponse;
-import com.garminpay.model.response.HealthResponse;
 import com.garminpay.model.response.ExchangeKeysResponse;
-import com.garminpay.model.response.RootResponse;
+import com.garminpay.model.response.HalLink;
+import com.garminpay.model.response.HealthResponse;
 import com.garminpay.model.response.RegisterCardResponse;
+import com.garminpay.model.response.RootResponse;
 import com.github.tomakehurst.wiremock.client.WireMock;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpHeaders;
 import org.apache.hc.core5.http.HttpStatus;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class GarminPayProxyIT extends BaseIT {
     private static final GarminPayProxy garminPayProxy = new GarminPayProxy(client, TESTING_URL);
@@ -36,8 +36,8 @@ class GarminPayProxyIT extends BaseIT {
 
     @Test
     void canGetRootEndpoint() throws JsonProcessingException {
-        Map<String, RootResponse.HalLink> mockLinks = Collections.singletonMap(
-            "self", RootResponse.HalLink.builder().href("https://testing/").build()
+        Map<String, HalLink> mockLinks = Collections.singletonMap(
+            "self", HalLink.builder().href("https://testing/").build()
         );
 
         RootResponse mockRootResponse = RootResponse.builder()
@@ -97,7 +97,7 @@ class GarminPayProxyIT extends BaseIT {
     @Test
     void canGetHealthStatus() throws JsonProcessingException {
         HealthResponse mockHealthResponse = HealthResponse.builder()
-            .healthStatus("OK")
+            .healthStatus("OK")// Add empty links to satisfy superclass requirements
             .build();
 
         String responseBody = objectMapper.writeValueAsString(mockHealthResponse);
@@ -114,6 +114,7 @@ class GarminPayProxyIT extends BaseIT {
         assertNotNull(health);
         assertEquals("OK", health.getHealthStatus());
     }
+
 
     @Test
     void canHandle502ResponseFromGetHealthStatus() {
