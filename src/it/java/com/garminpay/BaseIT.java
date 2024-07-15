@@ -31,7 +31,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 public class BaseIT {
 
     protected static final Map<String, HalLink> links = new HashMap<>();
-    protected static final String VERSION_HEADER_NAME = "GP-SDK-Version";
+    protected static final String VERSION_HEADER_NAME = "X-GP-SDK-Version";
     private static final ObjectMapper objectMapper = new ObjectMapper();
     protected static String TESTING_URL;
     protected static Client client;
