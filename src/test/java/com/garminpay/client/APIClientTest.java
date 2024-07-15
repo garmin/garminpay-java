@@ -28,7 +28,7 @@ import static org.mockito.Mockito.when;
 
 class APIClientTest {
     private static final String TESTING_URL = "http://testing";
-    private static final String VERSION_HEADER_NAME = "GP-SDK-Version";
+    private static final String VERSION_HEADER_NAME = "X-GP-SDK-Version";
     private APIClient client;
     private CloseableHttpClient httpClientMock;
 
