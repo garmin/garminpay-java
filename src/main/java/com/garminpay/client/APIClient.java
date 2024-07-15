@@ -34,7 +34,7 @@ public class APIClient implements Client {
         } else {
             this.httpClient = HttpClients.createDefault();
         }
-        this.versionHeader = new BasicHeader("X-GP-SDK-Version", SDKVersion.VERSION);
+        this.versionHeader = new BasicHeader("GP-SDK-Version", SDKVersion.VERSION);
     }
 
     /**
