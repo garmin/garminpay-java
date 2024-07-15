@@ -3,9 +3,7 @@ package com.garminpay.client;
 import com.garminpay.exception.GarminPayApiException;
 import com.garminpay.model.SDKVersion;
 import com.garminpay.model.dto.APIResponseDTO;
-
 import java.io.IOException;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
@@ -36,7 +34,7 @@ public class APIClient implements Client {
         } else {
             this.httpClient = HttpClients.createDefault();
         }
-        this.versionHeader = new BasicHeader("GP-SDK-Version", SDKVersion.VERSION);
+        this.versionHeader = new BasicHeader("X-GP-SDK-Version", SDKVersion.VERSION);
     }
 
     /**
