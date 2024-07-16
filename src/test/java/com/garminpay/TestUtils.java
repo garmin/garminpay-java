@@ -11,6 +11,7 @@ import java.util.UUID;
 import lombok.SneakyThrows;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.hc.core5.http.Header;
+import org.apache.hc.core5.http.message.BasicHeader;
 import wiremock.org.apache.commons.lang3.StringUtils;
 
 public class TestUtils {
@@ -53,6 +54,14 @@ public class TestUtils {
     private static ECKey generateECKey() {
         return new ECKeyGenerator(Curve.P_256).generate();
     }
+
+    public static final BasicHeader CF_RAY_HEADER = new BasicHeader("CF-RAY", "testing-cf-ray");
+    public static final BasicHeader X_REQUEST_ID_HEADER = new BasicHeader("x-request-id", "testing-x-request-id");
+
+    public static final Header[] TESTING_HEADERS = {
+        CF_RAY_HEADER,
+        X_REQUEST_ID_HEADER
+    };
 
     public static boolean checkForHeader(Header expectedHeader, Header[] actualHeaders) {
         return Arrays.stream(actualHeaders)

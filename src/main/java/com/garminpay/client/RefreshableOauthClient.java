@@ -3,12 +3,11 @@ package com.garminpay.client;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.garminpay.exception.GarminPayCredentialsException;
 import com.garminpay.exception.GarminPaySDKException;
 import com.garminpay.model.dto.APIResponseDTO;
 import com.garminpay.model.request.OAuthTokenRequest;
-import com.garminpay.model.response.ErrorResponse;
 import com.garminpay.model.response.OAuthTokenResponse;
+import com.garminpay.utility.ResponseHandlingUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.core5.http.ClassicHttpRequest;
 import org.apache.hc.core5.http.ContentType;
@@ -57,7 +56,7 @@ public class RefreshableOauthClient extends APIClient {
         APIResponseDTO response = wrappedClient.executeRequest(request);
         log.debug("Received response from {} method to {}, status: {}, x-request-id: {}, CF-RAY: {}",
             request.getMethod(), request.getPath(),
-            response.getStatus(), response.findXRequestId().orElse(""), response.findCFRay().orElse("")
+            response.getStatus(), response.findXRequestId(), response.findCFRay()
         );
 
         if (response.getStatus() == 401) { // If 401, execute retry flow
@@ -78,48 +77,16 @@ public class RefreshableOauthClient extends APIClient {
         ClassicHttpRequest request = this.buildOAuthRequest();
         APIResponseDTO responseDTO = this.wrappedClient.executeRequest(request);
 
-        // If response status is not 2xx client credentials may be invalid
-        if (responseDTO.getStatus() < 200 || responseDTO.getStatus() > 299) {
-            try {
-                log.warn("Refresh token failed with status: {}, x-request-id: {}, CF-RAY: {}",
-                    responseDTO.getStatus(), responseDTO.findXRequestId().orElse(""), responseDTO.findCFRay().orElse("")
-                );
-                ErrorResponse errorResponse = objectMapper.readValue(responseDTO.getContent(), ErrorResponse.class);
-
-                throw new GarminPayCredentialsException(
-                    "Failed to generate a new OAuth token, client credentials may be invalid.",
-                    errorResponse,
-                    responseDTO.findCFRay().orElse(null)
-                );
-            } catch (JsonProcessingException e) {
-                log.warn("Unable to parse error response when refreshing OAuth token", e);
-                ErrorResponse errorResponse = ErrorResponse.builder()
-                    .status(responseDTO.getStatus())
-                    .path(responseDTO.getPath())
-                    .build();
-
-                throw new GarminPayCredentialsException(
-                    "Failed to generate a new OAuth token, client credentials may be invalid.",
-                    errorResponse,
-                    responseDTO.findCFRay().orElse(null)
-                );
-            }
-        }
+        OAuthTokenResponse oAuthTokenResponse = ResponseHandlingUtil.parseResponse(responseDTO, OAuthTokenResponse.class);
 
         // Read in the response and set the new token
-        try {
-            OAuthTokenResponse oAuthTokenResponse = objectMapper.readValue(responseDTO.getContent(), OAuthTokenResponse.class);
-            if (oAuthTokenResponse.getAccessToken() == null) {
-                log.warn("Refresh token request executed but the token was null. status: {}, x-request-id: {}, CF-RAY: {}",
-                    responseDTO.getStatus(), responseDTO.findXRequestId().orElse(""), responseDTO.findCFRay().orElse("null")
-                );
-                throw new GarminPaySDKException("Found a response but the token was either null or did not refresh");
-            }
-
+        if (oAuthTokenResponse != null && oAuthTokenResponse.getAccessToken() != null) {
             this.authToken = oAuthTokenResponse.getAccessToken();
-        } catch (JsonProcessingException e) {
-            log.warn("Unable to parse error response", e);
-            throw new GarminPaySDKException("Failed to read OAuth token response when generating a new OAuth token");
+        } else {
+            log.warn("Refresh token request executed but the token was null. status: {}, x-request-id: {}, CF-RAY: {}",
+                responseDTO.getStatus(), responseDTO.findXRequestId(), responseDTO.findCFRay()
+            );
+            throw new GarminPaySDKException("Found a response but the token was either null or did not refresh");
         }
     }
 

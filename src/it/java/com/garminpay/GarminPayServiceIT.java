@@ -88,8 +88,8 @@ class GarminPayServiceIT extends BaseIT {
             .accessToken("testToken")
             .build();
 
-        // * Returns a key that our SDK will mark as overdue
-        // * It will only check that key a 2nd time, assumes when it gets a new key that it is valid
+        // Returns a key that our SDK will mark as overdue
+        // It will only check that key a 2nd time, assumes when it gets a new key that it is valid
         ExchangeKeysResponse eccEncryptionKey = ExchangeKeysResponse.builder()
             .keyId(UUID.randomUUID().toString())
             .active(true)
@@ -129,7 +129,7 @@ class GarminPayServiceIT extends BaseIT {
         garminPayService.registerCard(TestUtils.TESTING_CARD_DATA);
 
         assertEquals(deepLink, registerCardResponse.getDeepLinkUrl());
-        // * Keys should have been refreshed b/c TS was invalid, expected 2 calls to this
+        // Keys should have been refreshed b/c TS was invalid, expected 2 calls to this
         verify(exactly(2), postRequestedFor(urlPathEqualTo("/config/encryptionKeys")));
     }
 }

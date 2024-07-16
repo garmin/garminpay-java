@@ -9,15 +9,17 @@ import com.garminpay.exception.GarminPaySDKException;
 import com.garminpay.model.dto.APIResponseDTO;
 import com.garminpay.model.request.CreateECCEncryptionKeyRequest;
 import com.garminpay.model.request.CreatePaymentCardRequest;
-import com.garminpay.model.response.ErrorResponse;
 import com.garminpay.model.response.ExchangeKeysResponse;
 import com.garminpay.model.response.HalLink;
 import com.garminpay.model.response.HealthResponse;
 import com.garminpay.model.response.RegisterCardResponse;
 import com.garminpay.model.response.RootResponse;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+
+import com.garminpay.utility.ResponseHandlingUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.core5.http.ClassicHttpRequest;
 import org.apache.hc.core5.http.ContentType;
@@ -64,7 +66,7 @@ public class GarminPayProxy {
             .build();
         APIResponseDTO response = client.executeRequest(request);
 
-        return parseResponse(response, RootResponse.class);
+        return ResponseHandlingUtil.parseResponse(response, RootResponse.class);
     }
 
     /**
@@ -80,7 +82,7 @@ public class GarminPayProxy {
             .build();
         APIResponseDTO response = client.executeRequest(request);
 
-        return parseResponse(response, HealthResponse.class);
+        return ResponseHandlingUtil.parseResponse(response, HealthResponse.class);
     }
 
     /**
@@ -105,7 +107,7 @@ public class GarminPayProxy {
 
         APIResponseDTO response = client.executeRequest(request);
 
-        return parseResponse(response, ExchangeKeysResponse.class);
+        return ResponseHandlingUtil.parseResponse(response, ExchangeKeysResponse.class);
     }
 
     /**
@@ -128,7 +130,7 @@ public class GarminPayProxy {
 
         APIResponseDTO response = client.executeRequest(request);
 
-        return parseResponse(response, RegisterCardResponse.class);
+        return ResponseHandlingUtil.parseResponse(response, RegisterCardResponse.class);
     }
 
     private <T> StringEntity createRequestEntity(T requestModel) {
@@ -144,38 +146,6 @@ public class GarminPayProxy {
         }
 
         return new StringEntity(serializedRequestBody, ContentType.APPLICATION_JSON);
-    }
-
-    private <T> T parseResponse(APIResponseDTO responseDTO, Class<T> responseClass) {
-        log.debug("Parsing response from Client to class {}", responseClass.getName());
-        // If status is in [200, 300) range, parse the desired response class
-        if (responseDTO.getStatus() >= 200 && responseDTO.getStatus() < 300) {
-            try {
-                return objectMapper.readValue(responseDTO.getContent(), responseClass);
-            } catch (JsonProcessingException e) {
-                log.warn("Found an acceptable response status code but encountered unknown response body."
-                        + " status: {}, x-request-id: {}, CF-RAY: {}",
-                    responseDTO.getStatus(), responseDTO.findXRequestId().orElse(""), responseDTO.findCFRay().orElse("null")
-                );
-                throw new GarminPaySDKException("Failed to parse response entity.");
-            }
-        }
-
-        try {
-            log.warn("Response from Client contained an invalid status code. status: {}, x-request-id: {}, CF-RAY: {}",
-                responseDTO.getStatus(), responseDTO.findXRequestId().orElse(""), responseDTO.findCFRay().orElse("null")
-            );
-            ErrorResponse errorResponse = objectMapper.readValue(responseDTO.getContent(), ErrorResponse.class);
-            throw new GarminPayApiException(errorResponse, responseDTO.findCFRay().orElse(null));
-        } catch (JsonProcessingException e) {
-            log.warn("Unable to parse error response", e);
-            ErrorResponse errorResponse = ErrorResponse.builder()
-                .status(responseDTO.getStatus())
-                .path(responseDTO.getPath())
-                .build();
-
-            throw new GarminPayApiException(errorResponse, responseDTO.findCFRay().orElse(null));
-        }
     }
 
     /**

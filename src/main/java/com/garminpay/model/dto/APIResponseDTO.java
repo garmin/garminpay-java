@@ -11,7 +11,6 @@ import org.apache.hc.core5.http.io.entity.EntityUtils;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Optional;
 
 @Value
 @Builder
@@ -49,14 +48,15 @@ public class APIResponseDTO {
      *
      * @return CF-RAY id
      */
-    public Optional<String> findCFRay() {
+    public String findCFRay() {
         if (headers != null) {
             return Arrays.stream(headers)
                 .filter(header -> "CF-RAY".equalsIgnoreCase(header.getName()))
+                .map(Header::getValue)
                 .findFirst()
-                .map(Header::getValue);
+                .orElse("null");
         }
-        return Optional.empty();
+        return "null";
     }
 
     /**
@@ -64,13 +64,28 @@ public class APIResponseDTO {
      *
      * @return x-request-id
      */
-    public Optional<String> findXRequestId() {
+    public String findXRequestId() {
         if (headers != null) {
             return Arrays.stream(headers)
                 .filter(header -> "x-request-id".equalsIgnoreCase(header.getName()))
+                .map(Header::getValue)
                 .findFirst()
-                .map(Header::getValue);
+                .orElse("null");
         }
-        return Optional.empty();
+        return "null";
+    }
+
+    /**
+     * Matches headers of a response object to find and return the maintenance-mode field if it exists.
+     *
+     * @return boolean representing active maintenance
+     */
+    public boolean isMaintenanceMode() {
+        if (headers != null) {
+            return Arrays.stream(headers)
+                .anyMatch(header -> "maintenance-mode".equalsIgnoreCase(header.getName())
+                && "true".equalsIgnoreCase(header.getValue()));
+        }
+        return false;
     }
 }
