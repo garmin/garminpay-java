@@ -10,7 +10,7 @@ public abstract class GarminPayBaseException extends RuntimeException {
      *
      * @param message the detail message.
      */
-    public GarminPayBaseException(String message) {
+    protected GarminPayBaseException(String message) {
         super(message);
     }
 
@@ -20,7 +20,7 @@ public abstract class GarminPayBaseException extends RuntimeException {
      * @param message the detail message.
      * @param cause   the cause of the exception.
      */
-    public GarminPayBaseException(String message, Throwable cause) {
+    protected GarminPayBaseException(String message, Throwable cause) {
         super(message, cause);
     }
 }

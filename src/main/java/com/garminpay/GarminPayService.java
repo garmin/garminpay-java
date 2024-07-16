@@ -38,10 +38,10 @@ class GarminPayService {
      * @return String containing a deep link url to the Garmin Connect Mobile app
      */
     public String registerCard(GarminPayCardData garminPayCardData) {
-        garminPayProxy.refreshRootLinks(); // * Refresh root links for proxy
+        garminPayProxy.refreshRootLinks(); // Refresh root links for proxy
 
         if (this.exchangeKeysObject == null || isTimestampOverdue(this.exchangeKeysObject.getCreatedTs())) {
-            refreshKeys(); // * secretKey is set in here as well
+            refreshKeys(); // secretKey is set in here as well
         }
         log.debug("Proceeding with valid keys");
 
@@ -62,9 +62,9 @@ class GarminPayService {
         throw new GarminPaySDKException("Expected deeplink URL was null or empty");
     }
 
-    // * Does not check validity of keys when they are received
+    // Does not check validity of keys when they are received
     private void refreshKeys() {
-        // * Generate a new key
+        // Generate a new key
         log.debug("Refreshing key agreement with GarminPay");
         String clientPublicKey;
         String clientPrivateKey;
@@ -80,10 +80,10 @@ class GarminPayService {
             throw new GarminPayEncryptionException("Failed to generate client key", e);
         }
 
-        // * Exchange keys
+        // Exchange keys
         exchangeKeysObject = garminPayProxy.exchangeKeys(clientPublicKey);
 
-        // * Obtain shared secret
+        // Obtain shared secret
         secretKey = encryptionService.generateKeyAgreement(
             exchangeKeysObject.getServerPublicKey(),
             clientPrivateKey

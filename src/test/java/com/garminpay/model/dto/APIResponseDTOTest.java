@@ -1,5 +1,6 @@
 package com.garminpay.model.dto;
 
+import com.garminpay.TestUtils;
 import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.apache.hc.core5.http.Header;
 import org.apache.hc.core5.http.HttpHeaders;
@@ -13,8 +14,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class APIResponseDTOTest {
     private final Header[] defaultHeaders = {
         new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"),
-        new BasicHeader("CF-RAY", "testing-cf-ray"),
-        new BasicHeader("x-request-id", "testing-x-request-id")
+        TestUtils.CF_RAY_HEADER,
+        TestUtils.X_REQUEST_ID_HEADER,
     };
 
     @Test
@@ -26,8 +27,8 @@ class APIResponseDTOTest {
             .build();
 
         assertEquals(HttpStatus.SC_OK, responseDTO.getStatus());
-        assertEquals("testing-cf-ray", responseDTO.findCFRay().orElse(null));
-        assertEquals("testing-x-request-id", responseDTO.findXRequestId().orElse(null));
+        assertEquals(TestUtils.CF_RAY_HEADER.getValue(), responseDTO.findCFRay());
+        assertEquals(TestUtils.X_REQUEST_ID_HEADER.getValue(), responseDTO.findXRequestId());
     }
 
     @Test
@@ -40,7 +41,7 @@ class APIResponseDTOTest {
         APIResponseDTO responseDTO = APIResponseDTO.fromHttpResponse(response, "/");
 
         assertEquals(HttpStatus.SC_OK, responseDTO.getStatus());
-        assertEquals("testing-cf-ray", responseDTO.findCFRay().orElse(null));
-        assertEquals("testing-x-request-id", responseDTO.findXRequestId().orElse(null));
+        assertEquals(TestUtils.CF_RAY_HEADER.getValue(), responseDTO.findCFRay());
+        assertEquals(TestUtils.X_REQUEST_ID_HEADER.getValue(), responseDTO.findXRequestId());
     }
 }

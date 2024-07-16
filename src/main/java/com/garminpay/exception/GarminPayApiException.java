@@ -17,6 +17,7 @@ public class GarminPayApiException extends GarminPayBaseException {
     private final String created;
     private final String requestId;
     private final String cfRay;
+    private final String xRequestID;
 
     /**
      * Constructs a new GarminPayApiException with the specified details.
@@ -35,6 +36,7 @@ public class GarminPayApiException extends GarminPayBaseException {
         this.created = null;
         this.requestId = null;
         this.cfRay = null;
+        this.xRequestID = null;
     }
 
     /**
@@ -43,8 +45,9 @@ public class GarminPayApiException extends GarminPayBaseException {
      *
      * @param errorResponse error response returned from the API.
      * @param cfRay         CF-RAY from the API response headers.
+     * @param xRequestID    X-REQUEST-ID from the API response headers.
      */
-    public GarminPayApiException(ErrorResponse errorResponse, String cfRay) {
+    public GarminPayApiException(ErrorResponse errorResponse, String cfRay, String xRequestID) {
         super(errorResponse.getMessage());
         this.path = errorResponse.getPath();
         this.status = errorResponse.getStatus();
@@ -54,6 +57,7 @@ public class GarminPayApiException extends GarminPayBaseException {
         this.created = errorResponse.getCreatedTs();
         this.requestId = errorResponse.getRequestId();
         this.cfRay = cfRay;
+        this.xRequestID = xRequestID;
     }
 
     /**
@@ -71,5 +75,6 @@ public class GarminPayApiException extends GarminPayBaseException {
         this.created = null;
         this.requestId = null;
         this.cfRay = null;
+        this.xRequestID = null;
     }
 }
