@@ -4,11 +4,11 @@ import com.garminpay.client.APIClient;
 import com.garminpay.client.Client;
 import com.garminpay.client.RefreshableOauthClient;
 import com.garminpay.model.GarminPayCardData;
+import com.garminpay.model.response.RegisterCardResponse;
 import com.garminpay.proxy.GarminPayProxy;
+import java.nio.charset.StandardCharsets;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.client5.http.classic.HttpClient;
-
-import java.nio.charset.StandardCharsets;
 
 /**
  * This class serves as the main entrypoint when interacting with the GarminPay platform.
@@ -54,9 +54,9 @@ public class GarminPayClient {
      * Takes a card data object and registers it with the Garmin Pay platform.
      *
      * @param garminCardDataObject The card data object to register
-     * @return Deeplink url to GCM app
+     * @return RegisterCardResponse containing deep link URLs for iOS and Android
      */
-    public String registerCard(GarminPayCardData garminCardDataObject) {
+    public RegisterCardResponse registerCard(GarminPayCardData garminCardDataObject) {
         log.debug("Calling register card service");
         return garminPayService.registerCard(garminCardDataObject);
     }

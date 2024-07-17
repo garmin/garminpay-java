@@ -97,7 +97,7 @@ class GarminPayProxyIT extends BaseIT {
     @Test
     void canGetHealthStatus() throws JsonProcessingException {
         HealthResponse mockHealthResponse = HealthResponse.builder()
-            .healthStatus("OK")// Add empty links to satisfy superclass requirements
+            .healthStatus("OK") // Add empty links to satisfy superclass requirements
             .build();
 
         String responseBody = objectMapper.writeValueAsString(mockHealthResponse);
@@ -114,7 +114,6 @@ class GarminPayProxyIT extends BaseIT {
         assertNotNull(health);
         assertEquals("OK", health.getHealthStatus());
     }
-
 
     @Test
     void canHandle502ResponseFromGetHealthStatus() {
@@ -177,7 +176,8 @@ class GarminPayProxyIT extends BaseIT {
     @Test
     void canRegisterCard() throws JsonProcessingException {
         RegisterCardResponse mockRegisterCardResponse = RegisterCardResponse.builder()
-            .deepLinkUrl("Deep link URL")
+            .deepLinkUrlIos("https://connect.garmin.com/payment/push/ios/provision?pushToken=abcdefgh")
+            .deepLinkUrlAndroid("https://connect.garmin.com/payment/push/android/provision?pushToken=abcdefgh")
             .build();
 
         String registerCardResponseBody = objectMapper.writeValueAsString(mockRegisterCardResponse);
@@ -191,7 +191,8 @@ class GarminPayProxyIT extends BaseIT {
 
         RegisterCardResponse registerCardResponse = garminPayProxy.registerCard("mockEncryptedCardData");
 
-        assertNotNull(registerCardResponse.getDeepLinkUrl());
+        assertNotNull(registerCardResponse.getDeepLinkUrlIos());
+        assertNotNull(registerCardResponse.getDeepLinkUrlAndroid());
     }
 
     @Test
