@@ -8,5 +8,6 @@ import lombok.extern.jackson.Jacksonized;
 @Jacksonized
 @Builder
 public class RegisterCardResponse {
-    String deepLinkUrl;
+    String deepLinkUrlIos;
+    String deepLinkUrlAndroid;
 }

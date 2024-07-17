@@ -34,6 +34,8 @@ class GarminPayProxyTest {
         new BasicHeader("CF-RAY", "testing-cf-ray")
     };
     private final Map<String, HalLink> links = new HashMap<>();
+    private final String testingDeepLinkUrlIos = "https://connect.garmin.com/payment/push/ios/provision?pushToken=test";
+    private final String testingDeepLinkUrlAndroid = "https://connect.garmin.com/payment/push/android/provision?pushToken=test";
     private RefreshableOauthClient refreshableOauthClient;
     private GarminPayProxy garminPayProxy;
 
@@ -251,9 +253,9 @@ class GarminPayProxyTest {
 
     @Test
     void testPostRegisterCardSuccess() throws JsonProcessingException {
-        String testingDeepLinkUrl = "testingDeepLinkUrl";
         RegisterCardResponse successResponse = RegisterCardResponse.builder()
-            .deepLinkUrl(testingDeepLinkUrl)
+            .deepLinkUrlIos(testingDeepLinkUrlIos)
+            .deepLinkUrlAndroid(testingDeepLinkUrlAndroid)
             .build();
 
         APIResponseDTO responseDTO = APIResponseDTO.builder()
@@ -264,15 +266,16 @@ class GarminPayProxyTest {
 
         when(refreshableOauthClient.executeRequest(any())).thenReturn(responseDTO);
 
-        RegisterCardResponse deepLinkResponse = garminPayProxy.registerCard("mockEncryptedCardData");
+        RegisterCardResponse registerCardResponse = garminPayProxy.registerCard("mockEncryptedCardData");
 
-        assertEquals(testingDeepLinkUrl, deepLinkResponse.getDeepLinkUrl());
+        assertEquals(testingDeepLinkUrlIos, registerCardResponse.getDeepLinkUrlIos());
+        assertEquals(testingDeepLinkUrlAndroid, registerCardResponse.getDeepLinkUrlAndroid());
     }
 
     @Test
     void testPostRegisterCardFailure() throws JsonProcessingException {
         ErrorResponse failureResponse = ErrorResponse.builder()
-            .path("/config/encryptionKeys")
+            .path("/paymentCards")
             .status(HttpStatus.SC_BAD_REQUEST)
             .message("Bad Request")
             .build();

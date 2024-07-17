@@ -6,15 +6,14 @@ import com.garminpay.model.response.ExchangeKeysResponse;
 import com.garminpay.model.response.OAuthTokenResponse;
 import com.garminpay.model.response.RegisterCardResponse;
 import com.garminpay.proxy.GarminPayProxy;
-import org.apache.hc.core5.http.ContentType;
-import org.apache.hc.core5.http.HttpHeaders;
-import org.apache.hc.core5.http.HttpStatus;
-import org.junit.jupiter.api.Test;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.UUID;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.HttpHeaders;
+import org.apache.hc.core5.http.HttpStatus;
+import org.junit.jupiter.api.Test;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -47,7 +46,8 @@ class GarminPayServiceIT extends BaseIT {
             .build();
 
         RegisterCardResponse registerCardResponse = RegisterCardResponse.builder()
-            .deepLinkUrl("Deep link URL")
+            .deepLinkUrlIos(deepLinkUrlIos)
+            .deepLinkUrlAndroid(deepLinkUrlAndroid)
             .build();
 
         stubFor(post(urlPathEqualTo("/oauth/token"))
@@ -73,11 +73,10 @@ class GarminPayServiceIT extends BaseIT {
                 .withHeader("CF-RAY", "testing-cf-ray")
                 .withBody(objectMapper.writeValueAsString(registerCardResponse))));
 
+        RegisterCardResponse response = garminPayService.registerCard(TestUtils.TESTING_CARD_DATA);
 
-        String deepLink = garminPayService.registerCard(TestUtils.TESTING_CARD_DATA);
-        garminPayService.registerCard(TestUtils.TESTING_CARD_DATA);
-
-        assertEquals(deepLink, registerCardResponse.getDeepLinkUrl());
+        assertEquals(registerCardResponse.getDeepLinkUrlIos(), response.getDeepLinkUrlIos());
+        assertEquals(registerCardResponse.getDeepLinkUrlAndroid(), response.getDeepLinkUrlAndroid());
     }
 
     @Test
@@ -98,7 +97,8 @@ class GarminPayServiceIT extends BaseIT {
             .build();
 
         RegisterCardResponse registerCardResponse = RegisterCardResponse.builder()
-            .deepLinkUrl("Deep link URL")
+            .deepLinkUrlIos(deepLinkUrlIos)
+            .deepLinkUrlAndroid(deepLinkUrlAndroid)
             .build();
 
         stubFor(post(urlPathEqualTo("/oauth/token"))
@@ -124,11 +124,11 @@ class GarminPayServiceIT extends BaseIT {
                 .withHeader("CF-RAY", "testing-cf-ray")
                 .withBody(objectMapper.writeValueAsString(registerCardResponse))));
 
-
-        String deepLink = garminPayService.registerCard(TestUtils.TESTING_CARD_DATA);
+        RegisterCardResponse response = garminPayService.registerCard(TestUtils.TESTING_CARD_DATA);
         garminPayService.registerCard(TestUtils.TESTING_CARD_DATA);
 
-        assertEquals(deepLink, registerCardResponse.getDeepLinkUrl());
+        assertEquals(registerCardResponse.getDeepLinkUrlIos(), response.getDeepLinkUrlIos());
+        assertEquals(registerCardResponse.getDeepLinkUrlAndroid(), response.getDeepLinkUrlAndroid());
         // Keys should have been refreshed b/c TS was invalid, expected 2 calls to this
         verify(exactly(2), postRequestedFor(urlPathEqualTo("/config/encryptionKeys")));
     }

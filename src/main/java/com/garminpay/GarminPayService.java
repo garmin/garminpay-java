@@ -11,21 +11,20 @@ import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.jwk.Curve;
 import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jose.jwk.gen.ECKeyGenerator;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.codec.binary.Hex;
-
-import javax.crypto.SecretKey;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
+import javax.crypto.SecretKey;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.codec.binary.Hex;
 
 @Slf4j
 class GarminPayService {
+    private static final int OVERDUE_HOURS_THRESHOLD = 4;
     private final GarminPayProxy garminPayProxy;
     private final EncryptionService encryptionService = new EncryptionService();
     private ExchangeKeysResponse exchangeKeysObject = null;
     private SecretKey secretKey = null;
-    private static final int OVERDUE_HOURS_THRESHOLD = 4;
 
     GarminPayService(GarminPayProxy garminPayProxy) {
         this.garminPayProxy = garminPayProxy;
@@ -35,9 +34,9 @@ class GarminPayService {
      * Registers a card with the Garmin Pay platform.
      *
      * @param garminPayCardData Card to be registered
-     * @return String containing a deep link url to the Garmin Connect Mobile app
+     * @return RegisterCardResponse containing deep link URLs for iOS and Android
      */
-    public String registerCard(GarminPayCardData garminPayCardData) {
+    public RegisterCardResponse registerCard(GarminPayCardData garminPayCardData) {
         garminPayProxy.refreshRootLinks(); // Refresh root links for proxy
 
         if (this.exchangeKeysObject == null || isTimestampOverdue(this.exchangeKeysObject.getCreatedTs())) {
@@ -53,13 +52,16 @@ class GarminPayService {
             )
         );
 
-        if (registerCardResponse != null
-            && registerCardResponse.getDeepLinkUrl() != null
-            && !registerCardResponse.getDeepLinkUrl().isEmpty()) {
-            return registerCardResponse.getDeepLinkUrl();
+        if (isNullOrEmpty(registerCardResponse.getDeepLinkUrlIos()) || isNullOrEmpty(registerCardResponse.getDeepLinkUrlAndroid())) {
+            log.warn("Expected deeplink URLs were null or empty");
+            throw new GarminPaySDKException("Expected deeplink URLs were null or empty");
         }
-        log.warn("Expected deeplink URL was null or empty");
-        throw new GarminPaySDKException("Expected deeplink URL was null or empty");
+
+        return registerCardResponse;
+    }
+
+    private boolean isNullOrEmpty(String str) {
+        return str == null || str.trim().isEmpty();
     }
 
     // Does not check validity of keys when they are received
