@@ -12,4 +12,5 @@ public interface Client {
      * @return response DTO object containing status, body, etc.
      */
     APIResponseDTO executeRequest(ClassicHttpRequest request);
+
 }

@@ -3,11 +3,13 @@ package com.garminpay.client;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.garminpay.exception.GarminPayCredentialsException;
 import com.garminpay.exception.GarminPaySDKException;
 import com.garminpay.model.dto.APIResponseDTO;
 import com.garminpay.model.request.OAuthTokenRequest;
 import com.garminpay.model.response.OAuthTokenResponse;
 import com.garminpay.utility.ResponseHandlingUtil;
+import java.util.Base64;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.core5.http.ClassicHttpRequest;
 import org.apache.hc.core5.http.ContentType;
@@ -16,8 +18,6 @@ import org.apache.hc.core5.http.HttpHeaders;
 import org.apache.hc.core5.http.io.entity.StringEntity;
 import org.apache.hc.core5.http.io.support.ClassicRequestBuilder;
 import org.apache.hc.core5.http.message.BasicHeader;
-
-import java.util.Base64;
 
 @Slf4j
 public class RefreshableOauthClient extends APIClient {
@@ -39,15 +39,20 @@ public class RefreshableOauthClient extends APIClient {
         this.wrappedClient = client;
         this.credentials = credentials;
         this.authUrl = authUrl;
-
-        // Immediately try to get an Oauth token
-        // Will throw a GarminPayCredentialsException on failure
-        this.refreshToken();
     }
 
     @Override
     public APIResponseDTO executeRequest(ClassicHttpRequest request) {
         log.debug("Adding authentication headers to request before execution");
+
+        if (this.authToken == null) {
+            try {
+                refreshToken();
+            } catch (GarminPayCredentialsException e) {
+                log.error("Failed to execute request due to error fetching credentials", e);
+                throw e;
+            }
+        }
 
         // Add new header containing auth token
         Header authHeader = new BasicHeader(HttpHeaders.AUTHORIZATION, "Bearer " + this.authToken, true);
