@@ -14,18 +14,17 @@ import com.garminpay.model.response.HalLink;
 import com.garminpay.model.response.HealthResponse;
 import com.garminpay.model.response.RegisterCardResponse;
 import com.garminpay.model.response.RootResponse;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-
-import com.garminpay.utility.ResponseHandlingUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.core5.http.ClassicHttpRequest;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpHeaders;
 import org.apache.hc.core5.http.io.entity.StringEntity;
 import org.apache.hc.core5.http.io.support.ClassicRequestBuilder;
+
+import static com.garminpay.utility.ResponseHandlingUtil.parseResponse;
 
 /**
  * GarminPayProxy class responsible for calling the Garmin Pay API.
@@ -66,7 +65,7 @@ public class GarminPayProxy {
             .build();
         APIResponseDTO response = client.executeRequest(request);
 
-        return ResponseHandlingUtil.parseResponse(response, RootResponse.class);
+        return parseResponse(response, RootResponse.class);
     }
 
     /**
@@ -82,7 +81,11 @@ public class GarminPayProxy {
             .build();
         APIResponseDTO response = client.executeRequest(request);
 
-        return ResponseHandlingUtil.parseResponse(response, HealthResponse.class);
+        HealthResponse healthResponse = parseResponse(response, HealthResponse.class);
+        return HealthResponse.builder()
+            .healthStatus(healthResponse.getHealthStatus())
+            .statusCode(response.getStatus())
+            .build();
     }
 
     /**
@@ -107,7 +110,7 @@ public class GarminPayProxy {
 
         APIResponseDTO response = client.executeRequest(request);
 
-        return ResponseHandlingUtil.parseResponse(response, ExchangeKeysResponse.class);
+        return parseResponse(response, ExchangeKeysResponse.class);
     }
 
     /**
@@ -130,7 +133,7 @@ public class GarminPayProxy {
 
         APIResponseDTO response = client.executeRequest(request);
 
-        return ResponseHandlingUtil.parseResponse(response, RegisterCardResponse.class);
+        return parseResponse(response, RegisterCardResponse.class);
     }
 
     private <T> StringEntity createRequestEntity(T requestModel) {

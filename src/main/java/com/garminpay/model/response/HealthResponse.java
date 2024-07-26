@@ -10,8 +10,13 @@ import lombok.extern.jackson.Jacksonized;
 @Builder
 public class HealthResponse {
     /**
-     * The status of the health check.
+     * The health of Garmin Platform.
      */
     @JsonProperty("status")
     String healthStatus;
+
+    /**
+     * The status code of the health check.
+     */
+    int statusCode;
 }
