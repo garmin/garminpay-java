@@ -86,4 +86,75 @@ class RefreshableOauthClientIT extends BaseIT {
 
         assertThrows(GarminPayCredentialsException.class, () -> client.executeRequest(request));
     }
+
+    @Test
+    void initialRequestFetchesAuthToken() throws JsonProcessingException {
+        Client baseClient = new APIClient();
+        RefreshableOauthClient client = new RefreshableOauthClient(baseClient, ("client_id:client_secret").getBytes(), TESTING_URL + "/oauth/token");
+        OAuthTokenResponse mockToken = OAuthTokenResponse.builder()
+            .accessToken("testToken")
+            .build();
+
+        String authResponseBody = objectMapper.writeValueAsString(mockToken);
+
+        stubFor(post(urlPathEqualTo("/oauth/token"))
+            .willReturn(aResponse()
+                .withStatus(200)
+                .withHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType())
+                .withHeader("CF-RAY", "testing-cf-ray")
+                .withBody(authResponseBody)
+            )
+        );
+
+        stubFor(get(urlPathEqualTo("/testing"))
+            .willReturn(aResponse()
+                .withStatus(HttpStatus.SC_OK)
+            )
+        );
+
+        ClassicHttpRequest request = ClassicRequestBuilder.get(TESTING_URL + "/testing").build();
+        APIResponseDTO responseDTO = client.executeRequest(request);
+
+        // Verify that the token is set in the headers
+        assertEquals(HttpStatus.SC_OK, responseDTO.getStatus());
+        String authHeader = request.getHeaders(HttpHeaders.AUTHORIZATION)[0].getValue();
+        assertEquals("Bearer testToken", authHeader);
+
+    }
+
+    @Test
+    void willThrowExceptionWhenTokenRefreshFails() throws JsonProcessingException {
+        Client baseClient = new APIClient();
+        RefreshableOauthClient client = new RefreshableOauthClient(baseClient, ("client_id:client_secret").getBytes(), TESTING_URL + "/oauth/token");
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+            .path("/oauth/token")
+            .message("Unauthorized")
+            .status(HttpStatus.SC_UNAUTHORIZED)
+            .build();
+
+        String authResponseBody = objectMapper.writeValueAsString(errorResponse);
+
+        stubFor(post(urlPathEqualTo("/oauth/token"))
+            .willReturn(aResponse()
+                .withStatus(HttpStatus.SC_UNAUTHORIZED)
+                .withHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType())
+                .withHeader("CF-RAY", "testing-cf-ray")
+                .withBody(authResponseBody)
+            )
+        );
+
+        stubFor(get(urlPathEqualTo("/testing"))
+            .willReturn(aResponse()
+                .withStatus(HttpStatus.SC_UNAUTHORIZED)
+            )
+        );
+
+        // Make a request that triggers token refresh
+        ClassicHttpRequest request = ClassicRequestBuilder.get(TESTING_URL + "/testing").build();
+
+        assertThrows(GarminPayCredentialsException.class, () -> client.executeRequest(request));
+    }
+
+
 }
