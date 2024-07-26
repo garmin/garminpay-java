@@ -3,6 +3,7 @@ package com.garminpay;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.garminpay.model.response.ExchangeKeysResponse;
+import com.garminpay.model.response.HealthResponse;
 import com.garminpay.model.response.OAuthTokenResponse;
 import com.garminpay.model.response.RegisterCardResponse;
 import com.garminpay.proxy.GarminPayProxy;
@@ -18,12 +19,15 @@ import org.junit.jupiter.api.Test;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.exactly;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class GarminPayServiceIT extends BaseIT {
     private final GarminPayProxy garminPayProxy = new GarminPayProxy(BaseIT.client, TESTING_URL);
@@ -131,5 +135,37 @@ class GarminPayServiceIT extends BaseIT {
         assertEquals(registerCardResponse.getDeepLinkUrlAndroid(), response.getDeepLinkUrlAndroid());
         // Keys should have been refreshed b/c TS was invalid, expected 2 calls to this
         verify(exactly(2), postRequestedFor(urlPathEqualTo("/config/encryptionKeys")));
+    }
+
+    @Test
+    void canHandleUpHealthStatus() throws JsonProcessingException {
+        HealthResponse healthResponseUp = HealthResponse.builder()
+            .healthStatus("UP")
+            .build();
+
+        stubFor(get(urlPathEqualTo("/health"))
+            .willReturn(aResponse()
+                .withStatus(HttpStatus.SC_OK)
+                .withHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.toString())
+                .withBody(objectMapper.writeValueAsString(healthResponseUp))));
+
+        boolean healthStatus = garminPayService.checkHealthStatus();
+        assertTrue(healthStatus);
+    }
+
+    @Test
+    void canHandleDownHealthStatus() throws JsonProcessingException {
+        HealthResponse healthResponseDown = HealthResponse.builder()
+            .healthStatus("DOWN")
+            .build();
+
+        stubFor(get(urlPathEqualTo("/health"))
+            .willReturn(aResponse()
+                .withStatus(HttpStatus.SC_SERVICE_UNAVAILABLE)
+                .withHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.toString())
+                .withBody(objectMapper.writeValueAsString(healthResponseDown))));
+
+        boolean healthStatus = garminPayService.checkHealthStatus();
+        assertFalse(healthStatus);
     }
 }

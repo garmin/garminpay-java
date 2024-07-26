@@ -61,6 +61,16 @@ public class GarminPayClient {
         return garminPayService.registerCard(garminCardDataObject);
     }
 
+    /**
+     * Checks the health status of the Garmin Pay platform.
+     *
+     * @return Boolean, true if the platform is healthy, false otherwise
+     */
+    public Boolean checkHealthStatus() {
+        log.debug("Calling check health status service");
+        return garminPayService.checkHealthStatus();
+    }
+
     private byte[] validateAndBuildCredentials(String clientId, String clientSecret) {
         log.debug("Validating client credentials");
 

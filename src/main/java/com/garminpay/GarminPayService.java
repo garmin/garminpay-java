@@ -1,10 +1,12 @@
 package com.garminpay;
 
 import com.garminpay.encryption.EncryptionService;
+import com.garminpay.exception.GarminPayBaseException;
 import com.garminpay.exception.GarminPayEncryptionException;
 import com.garminpay.exception.GarminPaySDKException;
 import com.garminpay.model.GarminPayCardData;
 import com.garminpay.model.response.ExchangeKeysResponse;
+import com.garminpay.model.response.HealthResponse;
 import com.garminpay.model.response.RegisterCardResponse;
 import com.garminpay.proxy.GarminPayProxy;
 import com.nimbusds.jose.JOSEException;
@@ -62,6 +64,22 @@ class GarminPayService {
 
     private boolean isNullOrEmpty(String str) {
         return str == null || str.trim().isEmpty();
+    }
+
+    /**
+     * Checks the health status of the Garmin Pay platform.
+     *
+     * @return boolean indicating if the health status is "UP"
+     */
+    public boolean checkHealthStatus() {
+        log.debug("Checking health status of Garmin Pay platform");
+        try {
+            HealthResponse healthResponse = garminPayProxy.getHealthStatus();
+            return healthResponse.getStatusCode() >= 200 && healthResponse.getStatusCode() < 300;
+        } catch (GarminPayBaseException e) {
+            log.warn("Failed to check health status of Garmin Pay platform");
+            return false;
+        }
     }
 
     // Does not check validity of keys when they are received
