@@ -14,9 +14,11 @@ import com.garminpay.model.response.HalLink;
 import com.garminpay.model.response.HealthResponse;
 import com.garminpay.model.response.RegisterCardResponse;
 import com.garminpay.model.response.RootResponse;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.core5.http.ClassicHttpRequest;
 import org.apache.hc.core5.http.ContentType;
@@ -47,9 +49,8 @@ public class GarminPayProxy {
         this.client = client;
         this.objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-        // Get links from Garmin Pay root endpoint
+        // Set self link for future use
         this.links.put("self", HalLink.builder().href(baseUrl).build());
-        this.refreshRootLinks();
     }
 
     /**
@@ -76,6 +77,12 @@ public class GarminPayProxy {
      */
     public HealthResponse getHealthStatus() {
         log.debug("Retrieving health status");
+
+        HalLink link = links.get("health");
+        if (link == null || link.getHref() == null) {
+            refreshRootLinks();
+        }
+
         ClassicHttpRequest request = ClassicRequestBuilder
             .get(links.get("health").getHref())
             .build();
@@ -98,6 +105,12 @@ public class GarminPayProxy {
      */
     public ExchangeKeysResponse exchangeKeys(String publicKey) {
         log.debug("Exchanging keys");
+
+        HalLink link = links.get("encryptionKeys");
+        if (link == null || link.getHref() == null) {
+            refreshRootLinks();
+        }
+
         CreateECCEncryptionKeyRequest requestModel = CreateECCEncryptionKeyRequest.builder()
             .clientPublicKey(publicKey)
             .build();
@@ -121,6 +134,12 @@ public class GarminPayProxy {
      */
     public RegisterCardResponse registerCard(String encryptedCardData) {
         log.debug("Registering card");
+
+        HalLink link = links.get("paymentCards");
+        if (link == null || link.getHref() == null) {
+            refreshRootLinks();
+        }
+
         CreatePaymentCardRequest requestModel = CreatePaymentCardRequest.builder()
             .encryptedData(encryptedCardData)
             .build();

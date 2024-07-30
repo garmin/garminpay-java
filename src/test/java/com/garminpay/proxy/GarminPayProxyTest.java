@@ -61,23 +61,7 @@ class GarminPayProxyTest {
         when(refreshableOauthClient.executeRequest(any())).thenReturn(responseDTO);
 
         garminPayProxy = new GarminPayProxy(refreshableOauthClient, testingUrl);
-    }
-
-    @Test
-    void testWillFailWhenMissingRootLinks() throws JsonProcessingException {
-        RootResponse emptyRootResponse = RootResponse.builder()
-            .links(new HashMap<>())
-            .build();
-
-        APIResponseDTO responseDTO = APIResponseDTO.builder()
-            .status(HttpStatus.SC_OK)
-            .content(objectMapper.writeValueAsString(emptyRootResponse))
-            .headers(testingHeaders)
-            .build();
-
-        when(refreshableOauthClient.executeRequest(any())).thenReturn(responseDTO);
-
-        assertThrows(GarminPayApiException.class, () -> new GarminPayProxy(refreshableOauthClient, testingUrl));
+        garminPayProxy.refreshRootLinks();
     }
 
     @Test

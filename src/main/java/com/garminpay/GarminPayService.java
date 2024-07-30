@@ -62,10 +62,6 @@ class GarminPayService {
         return registerCardResponse;
     }
 
-    private boolean isNullOrEmpty(String str) {
-        return str == null || str.trim().isEmpty();
-    }
-
     /**
      * Checks the health status of the Garmin Pay platform.
      *
@@ -130,5 +126,9 @@ class GarminPayService {
             log.warn("Could not parse key creation timestamp: {} marking key as overdue", createdTs);
             return true;
         }
+    }
+
+    private boolean isNullOrEmpty(String str) {
+        return str == null || str.trim().isEmpty();
     }
 }
