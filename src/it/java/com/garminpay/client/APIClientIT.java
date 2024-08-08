@@ -40,7 +40,7 @@ class APIClientIT extends BaseIT {
 
         Header header = new BasicHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.toString());
 
-        stubFor(get(urlPathEqualTo("/testing"))
+        stubFor(get(urlPathEqualTo("/health-testing"))
             .willReturn(aResponse()
                 .withStatus(HttpStatus.SC_OK)
                 .withHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.toString())
@@ -48,7 +48,7 @@ class APIClientIT extends BaseIT {
             )
         );
 
-        ClassicHttpRequest request = ClassicRequestBuilder.get(TESTING_URL + "/testing").build();
+        ClassicHttpRequest request = ClassicRequestBuilder.get(TESTING_URL + "/health-testing").build();
         APIResponseDTO responseDTO = apiClient.executeRequest(request);
 
         assertEquals(HttpStatus.SC_OK, responseDTO.getStatus());

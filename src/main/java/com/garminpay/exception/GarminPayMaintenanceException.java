@@ -1,13 +1,16 @@
 package com.garminpay.exception;
 
-public class GarminPayMaintenanceException extends GarminPayBaseException {
+import com.garminpay.model.response.ErrorResponse;
+
+public class GarminPayMaintenanceException extends GarminPayApiException {
 
     /**
      * Constructs a new GarminPayMaintenanceException with the specified detail message.
      *
-     * @param message the detail message.
+     * @param message       the detail message.
+     * @param errorResponse error response returned from the API.
      */
-    public GarminPayMaintenanceException(String message) {
-        super(message);
+    public GarminPayMaintenanceException(String message, ErrorResponse errorResponse) {
+        super(message, errorResponse);
     }
 }

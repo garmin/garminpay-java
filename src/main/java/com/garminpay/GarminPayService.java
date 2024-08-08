@@ -117,8 +117,8 @@ class GarminPayService {
 
         try {
             long hoursBetween = ChronoUnit.HOURS.between(
-                Instant.now(),
-                Instant.parse(createdTs)
+                Instant.parse(createdTs),
+                Instant.now()
             );
             log.debug("Existing key is {} hours overdue", hoursBetween);
             return hoursBetween >= OVERDUE_HOURS_THRESHOLD;

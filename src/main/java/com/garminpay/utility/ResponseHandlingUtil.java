@@ -45,12 +45,8 @@ public class ResponseHandlingUtil {
         }
 
         // Check for maintenance mode
-        if (checkPlatformMaintenance(responseDTO)) {
-            log.warn("GarminPay platform is currently undergoing maintenance, try again in a little while."
-                    + " status: {}, x-request-id: {}, CF-RAY: {}",
-                responseDTO.getStatus(), responseDTO.findXRequestId(), responseDTO.findCFRay()
-            );
-            throw new GarminPayMaintenanceException("GarminPay platform is currently undergoing maintenance, try again in a little while.");
+        if (responseDTO.isMaintenanceMode()) {
+            handleGarminPayMaintenanceMode(responseDTO);
         }
 
         // Check for authentication error
@@ -65,9 +61,23 @@ public class ResponseHandlingUtil {
         return null;
     }
 
-    private static boolean checkPlatformMaintenance(APIResponseDTO responseDTO) {
-        log.debug("Checking platform maintenance");
-        return (responseDTO.isMaintenanceMode());
+    private static void handleGarminPayMaintenanceMode(APIResponseDTO responseDTO) {
+        log.warn("GarminPay platform is currently undergoing maintenance, try again in a little while."
+                + " status: {}, x-request-id: {}, CF-RAY: {}",
+            responseDTO.getStatus(), responseDTO.findXRequestId(), responseDTO.findCFRay()
+        );
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+            .status(responseDTO.getStatus())
+            .path(responseDTO.getPath())
+            .requestId(responseDTO.findXRequestId())
+            .cfRay(responseDTO.findCFRay())
+            .build();
+
+        throw new GarminPayMaintenanceException(
+            "GarminPay platform is currently undergoing maintenance, try again in a little while.",
+            errorResponse
+        );
     }
 
     private static void parseGarminPayAuthenticationError(APIResponseDTO responseDTO) {
@@ -76,46 +86,46 @@ public class ResponseHandlingUtil {
                 responseDTO.getStatus(), responseDTO.findXRequestId(), responseDTO.findCFRay()
             );
             ErrorResponse errorResponse = OBJECT_MAPPER.readValue(responseDTO.getContent(), ErrorResponse.class);
+            errorResponse.setCfRay(responseDTO.findCFRay());
 
             throw new GarminPayCredentialsException(
                 "Failed to authenticate, client credentials may be invalid.",
-                errorResponse,
-                responseDTO.findCFRay(),
-                responseDTO.findXRequestId()
+                errorResponse
             );
         } catch (JsonProcessingException | IllegalArgumentException e) {
-            log.warn("Unable to parse error response for authentication failure. Building exception", e);
+            log.trace("Unable to parse error response for authentication failure. Parse exception: ", e);
             ErrorResponse errorResponse = ErrorResponse.builder()
                 .status(responseDTO.getStatus())
                 .path(responseDTO.getPath())
                 .requestId(responseDTO.findXRequestId())
+                .cfRay(responseDTO.findCFRay())
                 .build();
 
             throw new GarminPayCredentialsException(
                 "Failed to authenticate, client credentials may be invalid.",
-                errorResponse,
-                responseDTO.findCFRay(),
-                responseDTO.findXRequestId()
+                errorResponse
             );
         }
     }
 
     private static void parseGarminPayPlatformError(APIResponseDTO responseDTO) {
         try {
-            log.warn("Response from Client contained an invalid status code. status: {}, x-request-id: {}, CF-RAY: {}",
+            log.warn("Response from GarminPay contained an invalid status code. status: {}, x-request-id: {}, CF-RAY: {}",
                 responseDTO.getStatus(), responseDTO.findXRequestId(), responseDTO.findCFRay()
             );
             ErrorResponse errorResponse = OBJECT_MAPPER.readValue(responseDTO.getContent(), ErrorResponse.class);
-            throw new GarminPayApiException(errorResponse, responseDTO.findCFRay(), responseDTO.findXRequestId());
+            errorResponse.setCfRay(responseDTO.findCFRay());
+            throw new GarminPayApiException("GarminPay platform returned an invalid status code", errorResponse);
         } catch (JsonProcessingException | IllegalArgumentException e) {
-            log.warn("Unable to parse error response", e);
+            log.trace("Unable to parse error response from GarminPay platform. Parse exception: ", e);
             ErrorResponse errorResponse = ErrorResponse.builder()
                 .status(responseDTO.getStatus())
                 .path(responseDTO.getPath())
                 .requestId(responseDTO.findXRequestId())
+                .cfRay(responseDTO.findCFRay())
                 .build();
 
-            throw new GarminPayApiException(errorResponse, responseDTO.findCFRay(), responseDTO.findXRequestId());
+            throw new GarminPayApiException("GarminPay platform returned an invalid status code", errorResponse);
         }
     }
 }
