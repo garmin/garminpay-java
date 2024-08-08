@@ -3,7 +3,6 @@ package com.garminpay.client;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.garminpay.exception.GarminPayCredentialsException;
 import com.garminpay.exception.GarminPaySDKException;
 import com.garminpay.model.dto.APIResponseDTO;
 import com.garminpay.model.request.OAuthTokenRequest;
@@ -46,12 +45,8 @@ public class RefreshableOauthClient extends APIClient {
         log.debug("Adding authentication headers to request before execution");
 
         if (this.authToken == null) {
-            try {
-                refreshToken();
-            } catch (GarminPayCredentialsException e) {
-                log.error("Failed to execute request due to error fetching credentials", e);
-                throw e;
-            }
+            log.info("Generating new auth token");
+            refreshToken();
         }
 
         // Add new header containing auth token

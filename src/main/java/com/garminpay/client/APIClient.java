@@ -3,7 +3,10 @@ package com.garminpay.client;
 import com.garminpay.exception.GarminPayApiException;
 import com.garminpay.model.SDKVersion;
 import com.garminpay.model.dto.APIResponseDTO;
+
 import java.io.IOException;
+
+import com.garminpay.model.response.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
@@ -55,11 +58,14 @@ public class APIClient implements Client {
         try {
             return httpClient.execute(request, response -> APIResponseDTO.fromHttpResponse(response, request.getPath()));
         } catch (IOException e) {
-            log.warn("Encountered an error while executing a {} request to path {}", request.getMethod(), request.getPath(), e);
-            throw new GarminPayApiException(
-                request.getPath(),
-                "HttpClient failed to execute request"
-            );
+            log.warn("Encountered an error while executing a {} request to path {}. Encountered exception message: {}",
+                request.getMethod(), request.getPath(), e.getMessage());
+            ErrorResponse errorResponse = ErrorResponse.builder()
+                .path(request.getPath())
+                .message("HttpClient failed to execute request: " + e.getMessage())
+                .build();
+
+            throw new GarminPayApiException("GarminPay failed to execute request", errorResponse);
         }
     }
 }

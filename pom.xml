@@ -4,7 +4,7 @@
     <groupId>garminpay</groupId>
     <artifactId>garminpay-java</artifactId>
     <packaging>jar</packaging>
-    <version>0.3.0-SNAPSHOT</version>
+    <version>0.4.0-SNAPSHOT</version>
     <name>garminpay-java</name>
     <properties>
         <junit.jupiter.version>5.10.2</junit.jupiter.version>

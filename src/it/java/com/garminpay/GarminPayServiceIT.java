@@ -97,7 +97,7 @@ class GarminPayServiceIT extends BaseIT {
             .keyId(UUID.randomUUID().toString())
             .active(true)
             .serverPublicKey(TestUtils.TESTING_ENCODED_PUBLIC_ECC_KEY)
-            .createdTs(Instant.now().plus(Duration.ofHours(5)).toString())
+            .createdTs(Instant.now().minus(Duration.ofHours(5)).toString())
             .build();
 
         RegisterCardResponse registerCardResponse = RegisterCardResponse.builder()

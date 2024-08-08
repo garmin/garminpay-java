@@ -1,6 +1,6 @@
 package com.garminpay.model.dto;
 
-import com.garminpay.exception.GarminPayApiException;
+import com.garminpay.exception.GarminPaySDKException;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -39,7 +39,7 @@ public class APIResponseDTO {
                 .build();
         } catch (ParseException | IOException e) {
             log.warn("Failed to parse http response to DTO", e);
-            throw new GarminPayApiException(path, "Failed to build APIResponseDTO from ClassicHttpResponse");
+            throw new GarminPaySDKException("Failed to build APIResponseDTO from ClassicHttpResponse");
         }
     }
 
