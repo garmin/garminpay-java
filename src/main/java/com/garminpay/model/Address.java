@@ -2,8 +2,10 @@ package com.garminpay.model;
 
 import lombok.Builder;
 import lombok.Value;
+import lombok.extern.jackson.Jacksonized;
 
 @Builder
+@Jacksonized
 @Value
 public class Address {
     /**

@@ -1,11 +1,15 @@
 package com.garminpay.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.Value;
+import lombok.extern.jackson.Jacksonized;
 
 @Builder
+@Jacksonized
 @Value
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class GarminPayCardData {
     /**
      * The primary account number (PAN) of the card.
