@@ -175,9 +175,11 @@ class GarminPayProxyIT extends BaseIT {
 
     @Test
     void canRegisterCard() throws JsonProcessingException {
+        Map<String, String> deepLinks = new HashMap<>();
+        deepLinks.put("ios", "https://connect.garmin.com/payment/push/ios/provision?pushToken=abcdefgh");
+        deepLinks.put("android", "https://connect.garmin.com/payment/push/android/provision?pushToken=abcdefgh");
         RegisterCardResponse mockRegisterCardResponse = RegisterCardResponse.builder()
-            .deepLinkUrlIos("https://connect.garmin.com/payment/push/ios/provision?pushToken=abcdefgh")
-            .deepLinkUrlAndroid("https://connect.garmin.com/payment/push/android/provision?pushToken=abcdefgh")
+            .deepLinkUrls(deepLinks)
             .build();
 
         String registerCardResponseBody = objectMapper.writeValueAsString(mockRegisterCardResponse);
@@ -191,8 +193,8 @@ class GarminPayProxyIT extends BaseIT {
 
         RegisterCardResponse registerCardResponse = garminPayProxy.registerCard("mockEncryptedCardData");
 
-        assertNotNull(registerCardResponse.getDeepLinkUrlIos());
-        assertNotNull(registerCardResponse.getDeepLinkUrlAndroid());
+        assertNotNull(registerCardResponse.getDeepLinkUrls().get("ios"));
+        assertNotNull(registerCardResponse.getDeepLinkUrls().get("android"));
     }
 
     @Test

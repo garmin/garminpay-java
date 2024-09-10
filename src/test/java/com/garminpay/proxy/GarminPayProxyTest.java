@@ -34,14 +34,18 @@ class GarminPayProxyTest {
         new BasicHeader("CF-RAY", "testing-cf-ray")
     };
     private final Map<String, HalLink> links = new HashMap<>();
-    private final String testingDeepLinkUrlIos = "https://connect.garmin.com/payment/push/ios/provision?pushToken=test";
-    private final String testingDeepLinkUrlAndroid = "https://connect.garmin.com/payment/push/android/provision?pushToken=test";
+    private static final String TESTING_DEEP_LINK_URL_IOS = "https://connect.garmin.com/payment/push/ios/provision?pushToken=test";
+    private static final String TESTING_DEEP_LINK_URL_ANDROID = "https://connect.garmin.com/payment/push/android/provision?pushToken=test";
+    protected final Map<String, String> deepLinks = new HashMap<>();
     private RefreshableOauthClient refreshableOauthClient;
     private GarminPayProxy garminPayProxy;
 
     @BeforeEach
     void setUp() throws JsonProcessingException {
         refreshableOauthClient = mock(RefreshableOauthClient.class);
+
+        deepLinks.put("ios", TESTING_DEEP_LINK_URL_IOS);
+        deepLinks.put("android", TESTING_DEEP_LINK_URL_ANDROID);
 
         links.put("self", HalLink.builder().href(testingUrl).build());
         links.put("health", HalLink.builder().href(testingUrl + "/health").build());
@@ -238,8 +242,7 @@ class GarminPayProxyTest {
     @Test
     void testPostRegisterCardSuccess() throws JsonProcessingException {
         RegisterCardResponse successResponse = RegisterCardResponse.builder()
-            .deepLinkUrlIos(testingDeepLinkUrlIos)
-            .deepLinkUrlAndroid(testingDeepLinkUrlAndroid)
+            .deepLinkUrls(deepLinks)
             .build();
 
         APIResponseDTO responseDTO = APIResponseDTO.builder()
@@ -252,8 +255,8 @@ class GarminPayProxyTest {
 
         RegisterCardResponse registerCardResponse = garminPayProxy.registerCard("mockEncryptedCardData");
 
-        assertEquals(testingDeepLinkUrlIos, registerCardResponse.getDeepLinkUrlIos());
-        assertEquals(testingDeepLinkUrlAndroid, registerCardResponse.getDeepLinkUrlAndroid());
+        assertEquals(TESTING_DEEP_LINK_URL_IOS, registerCardResponse.getDeepLinkUrls().get("ios"));
+        assertEquals(TESTING_DEEP_LINK_URL_ANDROID, registerCardResponse.getDeepLinkUrls().get("android"));
     }
 
     @Test

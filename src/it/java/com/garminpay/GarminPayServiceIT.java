@@ -50,8 +50,7 @@ class GarminPayServiceIT extends BaseIT {
             .build();
 
         RegisterCardResponse registerCardResponse = RegisterCardResponse.builder()
-            .deepLinkUrlIos(deepLinkUrlIos)
-            .deepLinkUrlAndroid(deepLinkUrlAndroid)
+            .deepLinkUrls(deepLinks)
             .build();
 
         stubFor(post(urlPathEqualTo("/oauth/token"))
@@ -79,8 +78,8 @@ class GarminPayServiceIT extends BaseIT {
 
         RegisterCardResponse response = garminPayService.registerCard(TestUtils.TESTING_CARD_DATA);
 
-        assertEquals(registerCardResponse.getDeepLinkUrlIos(), response.getDeepLinkUrlIos());
-        assertEquals(registerCardResponse.getDeepLinkUrlAndroid(), response.getDeepLinkUrlAndroid());
+        assertEquals(registerCardResponse.getDeepLinkUrls().get("ios"), response.getDeepLinkUrls().get("ios"));
+        assertEquals(registerCardResponse.getDeepLinkUrls().get("android"), response.getDeepLinkUrls().get("android"));
     }
 
     @Test
@@ -101,8 +100,7 @@ class GarminPayServiceIT extends BaseIT {
             .build();
 
         RegisterCardResponse registerCardResponse = RegisterCardResponse.builder()
-            .deepLinkUrlIos(deepLinkUrlIos)
-            .deepLinkUrlAndroid(deepLinkUrlAndroid)
+            .deepLinkUrls(deepLinks)
             .build();
 
         stubFor(post(urlPathEqualTo("/oauth/token"))
@@ -131,8 +129,8 @@ class GarminPayServiceIT extends BaseIT {
         RegisterCardResponse response = garminPayService.registerCard(TestUtils.TESTING_CARD_DATA);
         garminPayService.registerCard(TestUtils.TESTING_CARD_DATA);
 
-        assertEquals(registerCardResponse.getDeepLinkUrlIos(), response.getDeepLinkUrlIos());
-        assertEquals(registerCardResponse.getDeepLinkUrlAndroid(), response.getDeepLinkUrlAndroid());
+        assertEquals(registerCardResponse.getDeepLinkUrls().get("ios"), response.getDeepLinkUrls().get("ios"));
+        assertEquals(registerCardResponse.getDeepLinkUrls().get("android"), response.getDeepLinkUrls().get("android"));
         // Keys should have been refreshed b/c TS was invalid, expected 2 calls to this
         verify(exactly(2), postRequestedFor(urlPathEqualTo("/config/encryptionKeys")));
     }
