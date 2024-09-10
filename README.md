@@ -8,7 +8,7 @@ This SDK is intended to be used in Direct Push Provisioning scenarios and will r
 The deeplink sends a user to the Garmin Connect Mobile app where they will then have their card added to the wallet.
 
 It is important to note that oAuth and payload encryption are abstracted away by the SDK. Anytime the `checkHealthStatus` or `registerCard`
-methods are called oAuth tokens are generated or used if previously generated. Anytime `registerCard` is called with a card, the card is encrypted.
+methods are called oAuth tokens to authenticate with Garmin Pay services are generated or used if previously generated. Anytime `registerCard` is called with a card, the card is encrypted securely to be sent to Garmin Pay.
 ## Onboarding
 TBD
 
@@ -20,7 +20,7 @@ TBD
 
 ### Gradle
 
-`implementation "garminpay:garminpay-java:0.4.0-SNAPSHOT"`
+`implementation "garminpay:garminpay-java:0.6.0-SNAPSHOT"`
 
 ### Maven
 
@@ -28,7 +28,7 @@ TBD
 <dependency>
   <groupId>garminpay</groupId>
   <artifactId>garminpay-java</artifactId>
-  <version>0.4.0-SNAPSHOT</version>
+  <version>0.6.0-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -86,7 +86,6 @@ public class GarminPayExample {
 #### Bean initialization
 
 Initializing Garmin Pay as a [Spring Bean](https://docs.spring.io/spring-framework/reference/core/beans/definition.html) may also be beneficial for your uses.
-Upon creation of the client, the only exception that can be thrown is an `IllegalArgumentException` if the client id and secret are null or blank.
 
 GarminPayConfigExample.java
 
@@ -115,6 +114,8 @@ public class GarminPayConfigExample {
     }
 }
 ```
+**Note:** Note: if the client credentials are null or empty, an `IllegalArgumentException` will be thrown when the client is initialized. Otherwise, the provided credentials will be validated on the first request made to the Garmin Pay platform; not during client initialization.
+
 ### Checking the health of the Garmin Pay platform
 The `checkHealthStatus` method will return a boolean representing the status of the Garmin Pay platform.
 
@@ -136,7 +137,17 @@ public class CheckHealthExample {
 
 
 ### Registering a card
-The `registerCard` method will return a string containing the deeplink urls to Garmin Connect Mobile for both iOS and Android, or it will throw a relevant exception.
+The `registerCard` method will return a map called `deepLinkUrls` containing the deeplink urls to Garmin Connect Mobile for both iOS (`ios`) and Android (`android`), or it will throw a relevant exception.
+
+RegisterCardResponse
+```json
+{
+  "deepLinkUrls": {
+    "ios": "https://mock-dpp-url.com/payment/push/ios/provision?pushToken=jwstoken",
+    "android": "https://mock-dpp-url.com/payment/push/android/provision?pushToken=jwstoken"
+  }
+}
+```
 
 The GarminPayCardData object requires that the `pan` field be present. The SDK allows for all other fields to be optional. 
 However, by not providing critical information such as `cvv` and expiration dates, the card network may reject the provision request.

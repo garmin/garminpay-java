@@ -34,6 +34,7 @@ public class BaseIT {
     protected static final String VERSION_HEADER_NAME = "X-GP-SDK-Version";
     protected static final String deepLinkUrlIos = "https://connect.garmin.com/payment/push/ios/provision?pushToken=test";
     protected static final String deepLinkUrlAndroid = "https://connect.garmin.com/payment/push/android/provision?pushToken=test";
+    protected static final Map<String, String> deepLinks = new HashMap<>();
     private static final ObjectMapper objectMapper = new ObjectMapper();
     protected static String TESTING_URL;
     protected static Client client;
@@ -46,6 +47,9 @@ public class BaseIT {
         WireMock.configureFor("localhost", wireMockServer.port());
 
         TESTING_URL = "http://localhost:" + wireMockServer.port();
+
+        deepLinks.put("ios", deepLinkUrlIos);
+        deepLinks.put("android", deepLinkUrlAndroid);
 
         links.put("self", HalLink.builder().href(TESTING_URL).build());
         links.put("health", HalLink.builder().href(TESTING_URL + "/health").build());

@@ -54,8 +54,8 @@ class GarminPayService {
             )
         );
 
-        if (isNullOrEmpty(registerCardResponse.getDeepLinkUrlIos()) || isNullOrEmpty(registerCardResponse.getDeepLinkUrlAndroid())) {
-            log.warn("Expected deeplink URLs were null or empty");
+        if (registerCardResponse.getDeepLinkUrls().isEmpty()) {
+            log.warn("Response from Garmin Pay did not return expected deeplink URLs (they were null or empty)");
             throw new GarminPaySDKException("Expected deeplink URLs were null or empty");
         }
 
@@ -126,9 +126,5 @@ class GarminPayService {
             log.warn("Could not parse key creation timestamp: {} marking key as overdue", createdTs);
             return true;
         }
-    }
-
-    private boolean isNullOrEmpty(String str) {
-        return str == null || str.trim().isEmpty();
     }
 }

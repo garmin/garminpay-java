@@ -4,10 +4,11 @@ import lombok.Builder;
 import lombok.Value;
 import lombok.extern.jackson.Jacksonized;
 
+import java.util.Map;
+
 @Value
 @Jacksonized
 @Builder
 public class RegisterCardResponse {
-    String deepLinkUrlIos;
-    String deepLinkUrlAndroid;
+    Map<String, String> deepLinkUrls;
 }
