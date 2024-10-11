@@ -27,7 +27,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class GarminPayProxyTest {
+final class GarminPayProxyTest {
     private static final String testingUrl = "http://localhost";
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final Header[] testingHeaders = {
@@ -36,7 +36,7 @@ class GarminPayProxyTest {
     private final Map<String, HalLink> links = new HashMap<>();
     private static final String TESTING_DEEP_LINK_URL_IOS = "https://connect.garmin.com/payment/push/ios/provision?pushToken=test";
     private static final String TESTING_DEEP_LINK_URL_ANDROID = "https://connect.garmin.com/payment/push/android/provision?pushToken=test";
-    protected final Map<String, String> deepLinks = new HashMap<>();
+    private final Map<String, String> deepLinks = new HashMap<>();
     private RefreshableOauthClient refreshableOauthClient;
     private GarminPayProxy garminPayProxy;
 
@@ -124,9 +124,7 @@ class GarminPayProxyTest {
 
         when(refreshableOauthClient.executeRequest(any())).thenReturn(responseDTO);
 
-        GarminPayApiException exception = assertThrows(GarminPayApiException.class, () -> {
-            garminPayProxy.getRootEndpoint();
-        });
+        GarminPayApiException exception = assertThrows(GarminPayApiException.class, () -> garminPayProxy.getRootEndpoint());
 
         assertEquals(HttpStatus.SC_BAD_GATEWAY, exception.getStatus());
     }
@@ -232,9 +230,7 @@ class GarminPayProxyTest {
 
         when(refreshableOauthClient.executeRequest(any())).thenReturn(responseDTO);
 
-        GarminPayApiException exception = assertThrows(GarminPayApiException.class, () -> {
-            garminPayProxy.exchangeKeys(TestUtils.TESTING_ENCODED_PUBLIC_ECC_KEY);
-        });
+        GarminPayApiException exception = assertThrows(GarminPayApiException.class, () -> garminPayProxy.exchangeKeys(TestUtils.TESTING_ENCODED_PUBLIC_ECC_KEY));
 
         assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getStatus());
     }
@@ -275,9 +271,7 @@ class GarminPayProxyTest {
 
         when(refreshableOauthClient.executeRequest(any())).thenReturn(responseDTO);
 
-        GarminPayApiException exception = assertThrows(GarminPayApiException.class, () -> {
-            garminPayProxy.registerCard("mockEncryptedCardData");
-        });
+        GarminPayApiException exception = assertThrows(GarminPayApiException.class, () -> garminPayProxy.registerCard("mockEncryptedCardData"));
 
         assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getStatus());
     }

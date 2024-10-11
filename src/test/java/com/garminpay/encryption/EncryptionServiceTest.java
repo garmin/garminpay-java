@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class EncryptionServiceTest {
+final class EncryptionServiceTest {
     private final EncryptionService service = new EncryptionService();
     private final SecretKey secretKey = service.generateKeyAgreement(TestUtils.TESTING_ENCODED_PUBLIC_ECC_KEY, TestUtils.TESTING_ENCODED_PRIVATE_ECC_KEY);
 

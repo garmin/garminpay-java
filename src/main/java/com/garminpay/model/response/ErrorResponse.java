@@ -11,7 +11,7 @@ import java.util.StringJoiner;
 @Data
 @Jacksonized
 @Builder
-public class ErrorResponse {
+public final class ErrorResponse {
     String path;
     int status;
     String summary;

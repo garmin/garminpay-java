@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class GarminPayProxyIT extends BaseIT {
+final class GarminPayProxyIT extends BaseIT {
     private static final GarminPayProxy garminPayProxy = new GarminPayProxy(client, TESTING_URL);
     private final ObjectMapper objectMapper = new ObjectMapper();
 

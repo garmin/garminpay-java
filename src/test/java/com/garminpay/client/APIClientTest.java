@@ -26,7 +26,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class APIClientTest {
+final class APIClientTest {
     private static final String TESTING_URL = "http://testing";
     private static final String VERSION_HEADER_NAME = "X-GP-SDK-Version";
     private APIClient client;

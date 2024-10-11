@@ -4,7 +4,7 @@ import com.garminpay.model.response.ErrorResponse;
 import lombok.Getter;
 
 @Getter
-public class GarminPayCredentialsException extends GarminPayApiException {
+public final class GarminPayCredentialsException extends GarminPayApiException {
 
     /**
      * Constructs a new GarminPayCredentialsException with the specified details.

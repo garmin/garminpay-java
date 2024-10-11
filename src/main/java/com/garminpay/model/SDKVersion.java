@@ -1,6 +1,6 @@
 package com.garminpay.model;
 
-public class SDKVersion {
+public final class SDKVersion {
 
     private SDKVersion() {
     }

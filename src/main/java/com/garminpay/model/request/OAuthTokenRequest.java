@@ -12,5 +12,5 @@ import lombok.extern.jackson.Jacksonized;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class OAuthTokenRequest {
     @JsonProperty("grant_type")
-    private String grantType;
+    String grantType;
 }
