@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
 
 @Slf4j
-class GarminPayService {
+final class GarminPayService {
     private static final int OVERDUE_HOURS_THRESHOLD = 4;
     private final GarminPayProxy garminPayProxy;
     private final EncryptionService encryptionService = new EncryptionService();

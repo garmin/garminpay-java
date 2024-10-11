@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class CardDataTest {
+final class CardDataTest {
     @Test
     void canCreateCardDataObject() {
         GarminPayCardData garminPayCardData = GarminPayCardData.builder()

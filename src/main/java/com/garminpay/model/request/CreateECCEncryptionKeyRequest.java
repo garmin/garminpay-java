@@ -12,5 +12,5 @@ import lombok.extern.jackson.Jacksonized;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CreateECCEncryptionKeyRequest {
     @NonNull
-    private String clientPublicKey;
+    String clientPublicKey;
 }

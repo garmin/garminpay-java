@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class APIResponseDTOTest {
+final class APIResponseDTOTest {
     private final Header[] defaultHeaders = {
         new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"),
         TestUtils.CF_RAY_HEADER,

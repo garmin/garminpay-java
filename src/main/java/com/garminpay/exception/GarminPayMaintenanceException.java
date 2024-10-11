@@ -2,7 +2,7 @@ package com.garminpay.exception;
 
 import com.garminpay.model.response.ErrorResponse;
 
-public class GarminPayMaintenanceException extends GarminPayApiException {
+public final class GarminPayMaintenanceException extends GarminPayApiException {
 
     /**
      * Constructs a new GarminPayMaintenanceException with the specified detail message.

@@ -14,7 +14,7 @@ import org.apache.hc.core5.http.Header;
 import org.apache.hc.core5.http.message.BasicHeader;
 import wiremock.org.apache.commons.lang3.StringUtils;
 
-public class TestUtils {
+public final class TestUtils {
 
     public static final Address TESTING_ADDRESS = Address.builder()
         .name("Billing Address")

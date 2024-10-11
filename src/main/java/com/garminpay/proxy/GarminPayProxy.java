@@ -32,7 +32,7 @@ import static com.garminpay.utility.ResponseHandlingUtil.parseResponse;
  * GarminPayProxy class responsible for calling the Garmin Pay API.
  */
 @Slf4j
-public class GarminPayProxy {
+public final class GarminPayProxy {
     private static final String[] EXPECTED_LINK_RELS = new String[]{"self", "health", "encryptionKeys", "paymentCards"};
     private final Client client;
     private final ObjectMapper objectMapper;

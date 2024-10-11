@@ -14,7 +14,7 @@ import org.apache.hc.client5.http.classic.HttpClient;
  * This class serves as the main entrypoint when interacting with the GarminPay platform.
  */
 @Slf4j
-public class GarminPayClient {
+public final class GarminPayClient {
     private static final String BASE_URL = "https://api.qa.fitpay.ninja";
     private static final String AUTH_URL = "https://auth.qa.fitpay.ninja/oauth/token";
     private final GarminPayService garminPayService;

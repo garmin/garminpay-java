@@ -30,7 +30,7 @@ import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
 
 @Slf4j
-public class EncryptionService {
+public final class EncryptionService {
     private static final JWEAlgorithm ALGORITHM = JWEAlgorithm.A256GCMKW;
     private final ObjectMapper mapper = new ObjectMapper();
 

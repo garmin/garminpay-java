@@ -22,7 +22,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class RefreshableOauthClientIT extends BaseIT {
+final class RefreshableOauthClientIT extends BaseIT {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
