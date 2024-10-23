@@ -4,7 +4,7 @@
     <groupId>garminpay</groupId>
     <artifactId>garminpay-java</artifactId>
     <packaging>jar</packaging>
-    <version>0.6.0-SNAPSHOT</version>
+    <version>0.7.0-SNAPSHOT</version>
     <name>garminpay-java</name>
     <properties>
         <junit.jupiter.version>5.10.2</junit.jupiter.version>
@@ -151,6 +151,18 @@
             <plugin>
                 <groupId>com.amashchenko.maven.plugin</groupId>
                 <artifactId>gitflow-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>com.jolira</groupId>
+                <artifactId>onejar-maven-plugin</artifactId>
+                <version>1.4.4</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>one-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
