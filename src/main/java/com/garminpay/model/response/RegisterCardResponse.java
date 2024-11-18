@@ -1,14 +1,13 @@
 package com.garminpay.model.response;
 
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
 import lombok.extern.jackson.Jacksonized;
 
-import java.util.Map;
-
-@Value
+@Data
 @Jacksonized
 @Builder
 public class RegisterCardResponse {
-    Map<String, String> deepLinkUrls;
+    String deepLinkUrl;
+    String pushId;
 }
