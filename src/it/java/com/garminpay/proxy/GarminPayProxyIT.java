@@ -179,7 +179,8 @@ final class GarminPayProxyIT extends BaseIT {
         deepLinks.put("ios", "https://connect.garmin.com/payment/push/ios/provision?pushToken=abcdefgh");
         deepLinks.put("android", "https://connect.garmin.com/payment/push/android/provision?pushToken=abcdefgh");
         RegisterCardResponse mockRegisterCardResponse = RegisterCardResponse.builder()
-            .deepLinkUrls(deepLinks)
+            .deepLinkUrl(DEEPLINK_URL)
+            .pushId("test")
             .build();
 
         String registerCardResponseBody = objectMapper.writeValueAsString(mockRegisterCardResponse);
@@ -193,8 +194,8 @@ final class GarminPayProxyIT extends BaseIT {
 
         RegisterCardResponse registerCardResponse = garminPayProxy.registerCard("mockEncryptedCardData");
 
-        assertNotNull(registerCardResponse.getDeepLinkUrls().get("ios"));
-        assertNotNull(registerCardResponse.getDeepLinkUrls().get("android"));
+        assertNotNull(registerCardResponse.getDeepLinkUrl());
+        assertNotNull(registerCardResponse.getPushId());
     }
 
     @Test

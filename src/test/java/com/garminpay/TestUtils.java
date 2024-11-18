@@ -6,6 +6,9 @@ import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.jwk.Curve;
 import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jose.jwk.gen.ECKeyGenerator;
+
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.UUID;
 import lombok.SneakyThrows;
@@ -34,6 +37,8 @@ public final class TestUtils {
         .address(TESTING_ADDRESS)
         .build();
 
+    public static final URI TESTING_CALLBACK_URL;
+
     public static final String TESTING_KEY_ID = UUID.randomUUID().toString();
 
     public static final String TESTING_ENCODED_PUBLIC_ECC_KEY;
@@ -46,6 +51,14 @@ public final class TestUtils {
             TESTING_ENCODED_PUBLIC_ECC_KEY = String.valueOf(Hex.encodeHex(testingECCkey.toPublicKey().getEncoded()));
             TESTING_ENCODED_PRIVATE_ECC_KEY = String.valueOf(Hex.encodeHex(testingECCkey.toPrivateKey().getEncoded()));
         } catch (JOSEException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    static {
+        try {
+            TESTING_CALLBACK_URL = new URI("https://testing-callback-url.com");
+        } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
     }

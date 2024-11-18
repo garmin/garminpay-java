@@ -6,6 +6,8 @@ import com.garminpay.client.RefreshableOauthClient;
 import com.garminpay.model.GarminPayCardData;
 import com.garminpay.model.response.RegisterCardResponse;
 import com.garminpay.proxy.GarminPayProxy;
+
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.client5.http.classic.HttpClient;
@@ -14,7 +16,7 @@ import org.apache.hc.client5.http.classic.HttpClient;
  * This class serves as the main entrypoint when interacting with the GarminPay platform.
  */
 @Slf4j
-public final class GarminPayClient {
+public class GarminPayClient {
     private static final String BASE_URL = "https://api.qa.fitpay.ninja";
     private static final String AUTH_URL = "https://auth.qa.fitpay.ninja/oauth/token";
     private final GarminPayService garminPayService;
@@ -54,11 +56,19 @@ public final class GarminPayClient {
      * Takes a card data object and registers it with the Garmin Pay platform.
      *
      * @param garminCardDataObject The card data object to register
+     * @param  callbackUrl The URI that GCM will call after provisioning
      * @return RegisterCardResponse containing deep link URLs for iOS and Android
+     * @throws IllegalArgumentException if callbackUrl is NULL
      */
-    public RegisterCardResponse registerCard(GarminPayCardData garminCardDataObject) {
+    public RegisterCardResponse registerCard(GarminPayCardData garminCardDataObject, URI callbackUrl) {
+        if (callbackUrl == null) {
+            log.warn("Provided callback URL was invalid");
+            throw new IllegalArgumentException(
+                "Callback URL cannot be null"
+            );
+        }
         log.debug("Calling register card service");
-        return garminPayService.registerCard(garminCardDataObject);
+        return garminPayService.registerCard(garminCardDataObject, callbackUrl);
     }
 
     /**

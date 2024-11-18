@@ -13,12 +13,16 @@ import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.jwk.Curve;
 import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jose.jwk.gen.ECKeyGenerator;
+
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import javax.crypto.SecretKey;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.hc.core5.net.URIBuilder;
 
 @Slf4j
 final class GarminPayService {
@@ -36,9 +40,9 @@ final class GarminPayService {
      * Registers a card with the Garmin Pay platform.
      *
      * @param garminPayCardData Card to be registered
-     * @return RegisterCardResponse containing deep link URLs for iOS and Android
+     * @return RegisterCardResponse containing deepLinkUrl with the corresponding push identifier
      */
-    public RegisterCardResponse registerCard(GarminPayCardData garminPayCardData) {
+    public RegisterCardResponse registerCard(GarminPayCardData garminPayCardData, URI callbackUrl) {
         garminPayProxy.refreshRootLinks(); // Refresh root links for proxy
 
         if (this.exchangeKeysObject == null || isTimestampOverdue(this.exchangeKeysObject.getCreatedTs())) {
@@ -54,12 +58,26 @@ final class GarminPayService {
             )
         );
 
-        if (registerCardResponse.getDeepLinkUrls().isEmpty()) {
-            log.warn("Response from Garmin Pay did not return expected deeplink URLs (they were null or empty)");
+        if (registerCardResponse.getDeepLinkUrl() == null) {
+            log.warn("Response from Garmin Pay did not return expected deeplink URL (they were null or empty)");
             throw new GarminPaySDKException("Expected deeplink URLs were null or empty");
         }
 
-        return registerCardResponse;
+        try {
+            log.debug("Adding pushId to callback URL");
+            URI newCallbackUrl = new URIBuilder(callbackUrl)
+                .addParameter("pushId", registerCardResponse.getPushId()).build();
+
+            log.debug("Adding callback URL to deeplink URL");
+            URI newDeepLinkUrl = new URIBuilder(registerCardResponse.getDeepLinkUrl())
+                .addParameter("callbackUrl", newCallbackUrl.toString()).build();
+
+            registerCardResponse.setDeepLinkUrl(newDeepLinkUrl.toString());
+            return registerCardResponse;
+        } catch (URISyntaxException e) {
+            log.warn("Failed to build deeplink URL");
+            throw new GarminPaySDKException("Failed to build new deeplink URL", e);
+        }
     }
 
     /**

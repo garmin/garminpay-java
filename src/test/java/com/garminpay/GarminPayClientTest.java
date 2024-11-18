@@ -1,5 +1,6 @@
 package com.garminpay;
 
+import com.garminpay.model.GarminPayCardData;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -14,6 +15,15 @@ final class GarminPayClientTest {
         assertThrows(IllegalArgumentException.class, () -> new GarminPayClient("testClientId", null));
 
         assertThrows(IllegalArgumentException.class, () -> new GarminPayClient(null, null));
+    }
+
+    @Test
+    void cannotRegisterCardWithoutCallbackUrl() {
+        GarminPayClient garminPayClient = new GarminPayClient("testClientId", "testClientSecret");
+        GarminPayCardData cardData = GarminPayCardData.builder()
+            .pan("123")
+            .build();
+        assertThrows(IllegalArgumentException.class, () -> garminPayClient.registerCard(cardData, null));
     }
 
     @ParameterizedTest
