@@ -4,3 +4,11 @@ variables:
 include:
   - project: 'garmin-boulder/boulder-tools/templates'
     file: 'composites/maven-utility-pipeline.yml'
+
+License Check:
+  image: $JDK_IMAGE
+  stage: test
+  script:
+    - ./mvnw $MAVEN_CLI_OPTS -s $MAVEN_SETTINGS_XML license:check
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
