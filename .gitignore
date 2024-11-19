@@ -29,7 +29,8 @@ buildNumber.properties
 ## IntelliJ
 ##############################
 out/
-.idea/
+.idea/*
+!.idea/copyright/
 .idea_modules/
 *.iml
 *.ipr

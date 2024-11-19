@@ -6,6 +6,14 @@
     <packaging>jar</packaging>
     <version>0.8.0-SNAPSHOT</version>
     <name>garminpay-java</name>
+
+    <licenses>
+        <license>
+            <name>Garmin Pay Software License Agreement</name>
+            <url>https://github.com/garmin/garminpay-sdk-java/blob/main/LICENSE.txt</url>
+        </license>
+    </licenses>
+
     <properties>
         <junit.jupiter.version>5.10.2</junit.jupiter.version>
         <maven.compiler.source>8</maven.compiler.source>
@@ -149,10 +157,6 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>com.amashchenko.maven.plugin</groupId>
-                <artifactId>gitflow-maven-plugin</artifactId>
-            </plugin>
-            <plugin>
                 <groupId>com.jolira</groupId>
                 <artifactId>onejar-maven-plugin</artifactId>
                 <version>1.4.4</version>
@@ -160,6 +164,31 @@
                     <execution>
                         <goals>
                             <goal>one-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.amashchenko.maven.plugin</groupId>
+                <artifactId>gitflow-maven-plugin</artifactId>
+                <version>1.21.0</version>
+            </plugin>
+            <plugin>
+                <groupId>com.mycila</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <version>4.0</version>
+                <configuration>
+                    <licenseSets>
+                    <licenseSet>
+                    <header>licenseHeader.txt</header>
+                        <includes>**/*.java</includes>
+                    </licenseSet>
+                    </licenseSets>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>format</goal>
                         </goals>
                     </execution>
                 </executions>

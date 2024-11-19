@@ -205,3 +205,17 @@ public class CheckHealthExample {
     }
 }
 ```
+
+## Maintenance
+### Adding license header to each file
+If the License Check job fails due to a missing license header, you can add the license header to each file by running the following command:
+```bash
+mvn license:format
+```
+You can remove license headers from files by running the following command:
+```bash
+mvn license:remove
+```
+### Set up IntelliJ to auto-add license header to all new files
+1. Navigate to Intellij IDEA -> Settings -> Editor -> Copyright
+2. Change the Default project copyright to "Garmin Pay Software License Agreement"

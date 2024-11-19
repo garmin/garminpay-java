@@ -1,0 +1,6 @@
+<component name="CopyrightManager">
+  <copyright>
+    <option name="notice" value="Copyright &amp;#36;originalComment.match(&quot;Copyright (\d+)&quot;, 1, &quot;-&quot;, &quot;&amp;#36;today.year&quot;)&amp;#36;today.year Garmin International, Inc.&#10;Licensed under the Garmin Pay Software License Agreement; you&#10;may not use this file except in compliance with the Garmin Pay Software License Agreement." />
+    <option name="myName" value="Garmin Pay Software License Agreement" />
+  </copyright>
+</component>
