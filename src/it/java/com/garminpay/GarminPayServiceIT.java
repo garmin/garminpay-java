@@ -92,7 +92,7 @@ final class GarminPayServiceIT extends BaseIT {
 
         URI callbackUrl = new URIBuilder(TestUtils.TESTING_CALLBACK_URL).addParameter("pushId", registerCardResponse.getPushId()).build();
         URI testAgainstUrl = new URIBuilder(registerCardResponse.getDeepLinkUrl())
-            .addParameter("callbackUrl", callbackUrl.toString()).build();
+            .addParameter("callbackURL", callbackUrl.toString()).build();
         assertEquals(testAgainstUrl.toString(), response.getDeepLinkUrl());
         assertEquals(registerCardResponse.getPushId(), response.getPushId());
     }
@@ -148,7 +148,7 @@ final class GarminPayServiceIT extends BaseIT {
 
         URI callbackUrl = new URIBuilder(TestUtils.TESTING_CALLBACK_URL).addParameter("pushId", registerCardResponse.getPushId()).build();
         URI testAgainstUrl = new URIBuilder(registerCardResponse.getDeepLinkUrl())
-            .addParameter("callbackUrl", callbackUrl.toString()).build();
+            .addParameter("callbackURL", callbackUrl.toString()).build();
         assertEquals(testAgainstUrl.toString(), response.getDeepLinkUrl());
         assertEquals(registerCardResponse.getPushId(), response.getPushId());
         // Keys should have been refreshed b/c TS was invalid, expected 2 calls to this

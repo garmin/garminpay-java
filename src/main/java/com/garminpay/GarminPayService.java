@@ -75,7 +75,7 @@ final class GarminPayService {
 
             log.debug("Adding callback URL to deeplink URL");
             URI newDeepLinkUrl = new URIBuilder(registerCardResponse.getDeepLinkUrl())
-                .addParameter("callbackUrl", newCallbackUrl.toString()).build();
+                .addParameter("callbackURL", newCallbackUrl.toString()).build();
 
             registerCardResponse.setDeepLinkUrl(newDeepLinkUrl.toString());
             return registerCardResponse;
