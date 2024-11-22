@@ -4,7 +4,7 @@
     <groupId>garminpay</groupId>
     <artifactId>garminpay-java</artifactId>
     <packaging>jar</packaging>
-    <version>0.8.1-SNAPSHOT</version>
+    <version>0.9.0-SNAPSHOT</version>
     <name>garminpay-java</name>
 
     <licenses>
