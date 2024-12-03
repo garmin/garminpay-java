@@ -2,32 +2,12 @@ variables:
   NAME: 'garminpay-java'
   VERACODE_APP_ID: '1760537'
   VERACODE_APP_NAME: 'ENG-GarminPayStash'
-  VERACODE_SANDBOX_UPLOAD:
-    value: "true"
-    options:
-      - "true"
-      - "false"
-    description: "For uploading feature branches to Veracode sandbox for scanning"
-  VERACODE_UPLOAD_ALL:
-    value: "false"
-    options:
-      - "true"
-      - "false"
-    description:
-      "For uploading to Veracode main application and sandbox for scanning, should not be used for feature branches."
 
 include:
   - project: 'garmin-boulder/boulder-tools/templates'
-    file: 'composites/maven-utility-pipeline.yml'
+    file: 'composites/maven-library-pipeline.yml'
   - project: 'garmin-boulder/boulder-tools/templates'
     file: 'veracode.yml'
-
-stages:
-  - build
-  - test
-  - deploy
-  - release
-  - artifacts
 
 License Check:
   image: $JDK_IMAGE
@@ -36,18 +16,3 @@ License Check:
     - ./mvnw $MAVEN_CLI_OPTS -s $MAVEN_SETTINGS_XML license:check
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-
-Veracode Upload:
-  stage: artifacts
-  extends: .veracode-upload
-  environment:
-    name: US QA
-    action: prepare
-  rules:
-    - if: $VERACODE_SANDBOX_UPLOAD == 'true' || $VERACODE_UPLOAD_ALL == 'true'
-      when: on_success
-    - when: never
-  needs:
-    - job: Maven Package
-      artifacts: true
-
