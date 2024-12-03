@@ -4,7 +4,7 @@
     <groupId>garminpay</groupId>
     <artifactId>garminpay-java</artifactId>
     <packaging>jar</packaging>
-    <version>0.9.0-SNAPSHOT</version>
+    <version>${revision}</version>
     <name>garminpay-java</name>
 
     <licenses>
@@ -19,6 +19,7 @@
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
         <mockito.version>4.0.0</mockito.version>
+        <revision>local-SNAPSHOT</revision>
     </properties>
     <repositories>
         <repository>

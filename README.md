@@ -219,3 +219,39 @@ mvn license:remove
 ### Set up IntelliJ to auto-add license header to all new files
 1. Navigate to Intellij IDEA -> Settings -> Editor -> Copyright
 2. Change the Default project copyright to "Garmin Pay Software License Agreement"
+
+## Release and Patch Process
+### Release
+1. Create a feature branch off `main` branch
+2. Make changes and MR into `main` branch
+3. Create a release branch off `main` branch in the format of `release/<MAJOR>.<MINOR>`
+4. Update to the release version on the files below
+	- `README.md`
+	- `src/main/java/com/garminpay/model/SDKVersion.java`
+6. Create a new release on release branch by selecting Deploy > Releases
+    1. Check the latest tag on release branch
+    2. Tags: `<MAJOR>.<MINOR>.0`
+    3. Select Source: `release/<MAJOR>.<MINOR>`
+    4. Add Release notes
+    5. Create release
+
+### Patch
+1. Create a patch branch off `main` branch
+2. Make patch changes and MR into `main` branch
+3. Checkout to `release/<MAJOR>.<MINOR>` branch and cherry pick the commit
+
+    `git cherry-pick -x ${commit_sha}`
+
+    If it's a merge commit, use
+
+    `git cherry-pick -m 1 -x ${commit_sha}`
+
+4. Update to the patch version on the files below
+	- `README.md`
+	- `src/main/java/com/garminpay/model/SDKVersion.java`
+6. Create a new release on release branch by selecting Deploy > Releases
+    1. Check the latest tag on release branch
+    2. Tags: `<MAJOR>.<MINOR>.<PATCH>+1`
+    3. Select Source: `release/<MAJOR>.<MINOR>`
+    4. Add Release notes
+    5. Create release
