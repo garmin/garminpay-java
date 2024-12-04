@@ -224,21 +224,21 @@ mvn license:remove
 ### Release
 1. Create a feature branch off `main` branch
 2. Make changes and MR into `main` branch
-3. Create a release branch off `main` branch in the format of `release/<MAJOR>.<MINOR>`
+3. Create a release branch off `main` branch in the format of `release-<MAJOR>.<MINOR>`
 4. Update to the release version on the files below
 	- `README.md`
 	- `src/main/java/com/garminpay/model/SDKVersion.java`
 6. Create a new release on release branch by selecting Deploy > Releases
     1. Check the latest tag on release branch
     2. Tags: `<MAJOR>.<MINOR>.0`
-    3. Select Source: `release/<MAJOR>.<MINOR>`
+    3. Select Source: `release-<MAJOR>.<MINOR>`
     4. Add Release notes
     5. Create release
 
 ### Patch
 1. Create a patch branch off `main` branch
 2. Make patch changes and MR into `main` branch
-3. Checkout to `release/<MAJOR>.<MINOR>` branch and cherry pick the commit
+3. Checkout to `release-<MAJOR>.<MINOR>` branch and cherry pick the commit
 
     `git cherry-pick -x ${commit_sha}`
 
@@ -252,6 +252,6 @@ mvn license:remove
 6. Create a new release on release branch by selecting Deploy > Releases
     1. Check the latest tag on release branch
     2. Tags: `<MAJOR>.<MINOR>.<PATCH>+1`
-    3. Select Source: `release/<MAJOR>.<MINOR>`
+    3. Select Source: `release-<MAJOR>.<MINOR>`
     4. Add Release notes
     5. Create release
