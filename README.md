@@ -137,20 +137,7 @@ public class CheckHealthExample {
 
 
 ### Registering a card
-The `registerCard` method will return a map called `deepLinkUrls` containing the deeplink urls to Garmin Connect Mobile for both iOS (`ios`) and Android (`android`), or it will throw a relevant exception.
-
-RegisterCardResponse
-```json
-{
-  "deepLinkUrls": {
-    "ios": "https://mock-dpp-url.com/payment/push/ios/provision?pushToken=jwstoken",
-    "android": "https://mock-dpp-url.com/payment/push/android/provision?pushToken=jwstoken"
-  }
-}
-```
-
-The GarminPayCardData object requires that the `pan` field be present. The SDK allows for all other fields to be optional. 
-However, by not providing critical information such as `cvv` and expiration dates, the card network may reject the provision request.
+The `registerCard` method takes in a `GarminPayCardData` object that is the card information that should be provisioned. It also takes a `callbackUrl` URI object that will be used to return to the issuer app after GCM has attempted provisioning.
 
 RegisterCardExample.java
 ```java
@@ -186,6 +173,23 @@ public class RegisterCardExample {
     }
 }
 ```
+The GarminPayCardData object requires that the `pan` field be present. The SDK allows for all other fields to be optional.
+However, by not providing critical information such as `cvv` and expiration dates, the card network may reject the provision request.
+
+The `RegisterCardResponse` objects returns a `deepLinkUrl` to Garmin Connect Mobile (GCM) for both iOS and Android as well as the corresponding pushId, or it will throw a relevant exception.
+
+RegisterCardResponse Example
+```json
+{
+  "deepLinkUrl": "https://connect.garmin.com/payment/push-to-wallet/paymentcard?pushToken=eyJraWQiOiJhcm46YXdzOmttczp1cy1lYXN0LTE6MTU2NDk0MzM0MDUwOmtleVwvOWQ2Yjg3MDItMzJhZi00ZGQwLTkxNDYtMDNkNDUwZDlkMmZhIiwidHlwIjoiSldUIiwiYWxnIjoiRVM1MTIifQ.eyJwdXNoSWQiOiI1Y2M0OGU3OS1hZTI5LTRlODUtYWMxMi02YjdiMDVjNzkwZWUifQ.MIGHAkE1_siLz8_SfIwCa7a4__4ROBwxQJ7zHxmpzaeo1DsvBfr6f6tRsvlhY74kt57scEfzjVGbhJvIhZy1dU9f2crCfgJCAREugeV_gsQrsvCRjvEyWZHxd81QkQZ4BzdqdLSuWHPOSCSkp-CL1H8QySZGDSWS5R5KUEZTBj1a4gBHWf8uFa-F&callbackURL=https%3A%2F%2Ftest.com%3FpushId%3D5cc48e79-ae29-4e85-ac12-6b7b05c790ee",
+  "pushId": "3D5cc48e79-ae29-4e85-ac12-6b7b05c790ee"
+}
+```
+Note that the `deepLinkUrl` has appended the `callbackUrl` that was passed in as a parameter in the `registerCard` method with the `pushId` appended to the `callbackUrl`
+
+
+
+
 
 ### Handling Maintenance Mode
 Any request made through the SDK may return a response signaling that the platform is undergoing maintenance.
