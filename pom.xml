@@ -1,12 +1,13 @@
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>garminpay</groupId>
-    <artifactId>garminpay-java</artifactId>
+    <groupId>com.garmin</groupId>
+    <artifactId>garminpay</artifactId>
     <packaging>jar</packaging>
     <version>${revision}</version>
-    <name>garminpay-java</name>
-
+    <name>Garmin Pay SDK</name> 
+    <description>The Official Garmin Pay SDK</description>
+    <url>https://docs.gp.garmin.com/</url>
     <licenses>
         <license>
             <name>Garmin Pay Software License Agreement</name>
@@ -27,16 +28,49 @@
             <url>${env.CI_SERVER_URL}/api/v4/projects/${env.CI_PROJECT_ID}/packages/maven</url>
         </repository>
     </repositories>
-    <distributionManagement>
-        <repository>
+    <profiles>
+        <profile>
             <id>gitlab-maven</id>
-            <url>${env.CI_SERVER_URL}/api/v4/projects/${env.CI_PROJECT_ID}/packages/maven</url>
-        </repository>
-        <snapshotRepository>
-            <id>gitlab-maven</id>
-            <url>${env.CI_SERVER_URL}/api/v4/projects/${env.CI_PROJECT_ID}/packages/maven</url>
-        </snapshotRepository>
-    </distributionManagement>
+            <activation>
+                <property>
+                    <name>!mavenCentral</name>
+                </property>
+            </activation>
+            <properties>
+            </properties>
+            <distributionManagement>
+                <repository>
+                    <id>gitlab-maven</id>
+                    <url>${env.CI_SERVER_URL}/api/v4/projects/${env.CI_PROJECT_ID}/packages/maven</url>
+                </repository>
+                <snapshotRepository>
+                    <id>gitlab-maven</id>
+                    <url>${env.CI_SERVER_URL}/api/v4/projects/${env.CI_PROJECT_ID}/packages/maven</url>
+                </snapshotRepository>
+            </distributionManagement>
+        </profile>
+        <profile>
+            <id>maven-central</id>
+            <activation>
+                <property>
+                    <name>mavenCentral</name>   
+                    <value>true</value>
+                </property>
+            </activation>
+            <properties>
+            </properties>
+            <distributionManagement>
+                <repository>
+                    <id>ossrh</id>
+                    <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+                </repository>
+                <snapshotRepository>
+                    <id>ossrh</id>
+                    <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+                </snapshotRepository>
+            </distributionManagement>
+        </profile>
+    </profiles>
     <dependencies>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
