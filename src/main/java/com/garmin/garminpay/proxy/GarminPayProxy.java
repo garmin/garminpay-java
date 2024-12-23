@@ -62,7 +62,7 @@ public final class GarminPayProxy {
      * Retrieves the root endpoint of the Garmin Pay API.
      *
      * @return RootResponse containing the root endpoint details.
-     * @throws GarminPayApiException if the API response indicates a failure (status code < 200 or >= 300).
+     * @throws GarminPayApiException if the API response indicates a failure (status code less than 200 or greater than or equal to 300).
      */
     public RootResponse getRootEndpoint() {
         log.debug("Retrieving root endpoint");
@@ -78,7 +78,7 @@ public final class GarminPayProxy {
      * Retrieves the health status of the Garmin Pay API.
      *
      * @return HealthResponse containing the health status of the Garmin Pay API.
-     * @throws GarminPayApiException if the API response indicates a failure (status code < 200 or >= 300).
+     * @throws GarminPayApiException if the API response indicates a failure (status code less than 200 or greater than or equal to 300).
      */
     public HealthResponse getHealthStatus() {
         log.debug("Retrieving health status");
@@ -106,7 +106,7 @@ public final class GarminPayProxy {
      *
      * @param publicKey A public ecc key encoded and represented as a string.
      * @return ExchangeKeysResponse that contains keyId, active status and SecretKey for encryption
-     * @throws GarminPayApiException if the API response indicates a failure (status code < 200 or >= 300).
+     * @throws GarminPayApiException if the API response indicates a failure (status code less than 200 or greater than or equal to 300).
      */
     public ExchangeKeysResponse exchangeKeys(String publicKey) {
         log.debug("Exchanging keys");
