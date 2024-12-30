@@ -29,8 +29,8 @@ public class GarminPayClient {
     /**
      * Creates a GarminPayClient with the given clientId and clientSecret.
      *
-     * @param clientId     the client ID provided by the issuer
-     * @param clientSecret the client secret provided by the issuer
+     * @param clientId     the client ID given by Garmin Pay
+     * @param clientSecret the client secret given by Garmin Pay
      */
     public GarminPayClient(String clientId, String clientSecret) {
         this(clientId, clientSecret, null);
@@ -38,7 +38,7 @@ public class GarminPayClient {
 
     /**
      * Creates a GarminPayClient with the given clientId, clientSecret and httpClient.
-     * httpClient must use an HTTP/S configured proxy, not TCP, etc.
+     * Custom HttpClient proxy shall only be of type {@link java.net.Proxy.Type#HTTP}.
      *
      * @param clientId     the client ID provided by the issuer
      * @param clientSecret the client secret provided by the issuer

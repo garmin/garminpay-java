@@ -9,6 +9,9 @@ import com.garmin.garminpay.model.response.ErrorResponse;
 
 import lombok.Getter;
 
+/**
+ * Exception thrown when there is a credential-related error in the Garmin Pay integration.
+ */
 @Getter
 public final class GarminPayCredentialsException extends GarminPayApiException {
 

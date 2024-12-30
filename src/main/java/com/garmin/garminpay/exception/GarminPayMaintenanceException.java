@@ -7,6 +7,9 @@ package com.garmin.garminpay.exception;
 
 import com.garmin.garminpay.model.response.ErrorResponse;
 
+/**
+ * Exception thrown when the Garmin Pay Platform is undergoing maintenance.
+ */
 public final class GarminPayMaintenanceException extends GarminPayApiException {
 
     /**
