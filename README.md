@@ -20,7 +20,7 @@ TBD
 
 ### Gradle
 
-`implementation "garminpay:garminpay-java:0.9.0-SNAPSHOT"`
+`implementation "garminpay:garminpay-java:1.0.0"`
 
 ### Maven
 
@@ -28,7 +28,7 @@ TBD
 <dependency>
   <groupId>garminpay</groupId>
   <artifactId>garminpay-java</artifactId>
-  <version>0.9.0-SNAPSHOT</version>
+  <version>1.0.0</version>
 </dependency>
 ```
 
