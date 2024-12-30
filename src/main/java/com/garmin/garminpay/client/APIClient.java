@@ -32,7 +32,7 @@ public class APIClient implements Client {
 
     /**
      * Constructs a new APIClient with a custom HttpClient or the default if null.
-     * Custom HttpClient must use an HTTP/S configured proxy, not TCP, etc.
+     * Custom HttpClient proxy shall only be of type {@link java.net.Proxy.Type#HTTP}.
      *
      * @param httpClient the httpClient to use for requests
      */

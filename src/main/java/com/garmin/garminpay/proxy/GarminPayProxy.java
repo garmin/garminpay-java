@@ -135,7 +135,7 @@ public final class GarminPayProxy {
      * Makes secure https request to Garmin Pay platform to register customer’s CardData.
      *
      * @param encryptedCardData Serialized and encrypted GarminPayCardDataObject
-     * @return sessionResponse reference data for the ephemeral session
+     * @return RegisterCardResponse containing a unique session identifier and a link to the card registration page within GCM.
      */
     public RegisterCardResponse registerCard(String encryptedCardData) {
         log.debug("Registering card");
