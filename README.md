@@ -225,24 +225,26 @@ mvn license:remove
 2. Change the Default project copyright to "Garmin Pay Software License Agreement"
 
 ## Release and Patch Process
+All SNAPSHOT jars will be published to the GitLab Package Registry,
+while release jars will be published to the Maven Central Repository.
+Release jars only get created when a tag pipeline is triggered by tagging a release version tag on a release branch.
 ### Release
-1. Create a feature branch off `main` branch
-2. Make changes and MR into `main` branch
-3. Create a release branch off `main` branch in the format of `release-<MAJOR>.<MINOR>`
-4. Update to the release version on the files below
+1. Once feature changes MR'ed into `main` branch
+2. Create a release branch off `main` branch in the format of `release-<MAJOR>.<MINOR>` (e.g., `release-1.0`)
+3. Update to the release version on the files below
 	- `README.md`
 	- `src/main/java/com/garminpay/model/SDKVersion.java`
-6. Create a new release on release branch by selecting Deploy > Releases
+4. Create a new release on release branch by selecting Deploy > Releases (The main goal is to tag release tag on release branch)
     1. Check the latest tag on release branch
-    2. Tags: `<MAJOR>.<MINOR>.0`
-    3. Select Source: `release-<MAJOR>.<MINOR>`
+    2. Tags: `<MAJOR>.<MINOR>.0` (e.g., `1.0.0`)
+    3. Select Source: `release-<MAJOR>.<MINOR>` (e.g., `release-1.0`)
     4. Add Release notes
     5. Create release
 
 ### Patch
-1. Create a patch branch off `main` branch
-2. Make patch changes and MR into `main` branch
-3. Checkout to `release-<MAJOR>.<MINOR>` branch and cherry pick the commit
+1. Once patch changes MR'ed into `main` branch
+2. Checkout to `release-<MAJOR>.<MINOR>` branch (e.g., `release-1.0`)
+and cherry pick the commit
 
     `git cherry-pick -x ${commit_sha}`
 
@@ -250,12 +252,12 @@ mvn license:remove
 
     `git cherry-pick -m 1 -x ${commit_sha}`
 
-4. Update to the patch version on the files below
+3. Update to the patch version on the files below
 	- `README.md`
 	- `src/main/java/com/garminpay/model/SDKVersion.java`
-6. Create a new release on release branch by selecting Deploy > Releases
+4. Create a new release on release branch by selecting Deploy > Releases
     1. Check the latest tag on release branch
-    2. Tags: `<MAJOR>.<MINOR>.<PATCH>+1`
-    3. Select Source: `release-<MAJOR>.<MINOR>`
+    2. Tags: `<MAJOR>.<MINOR>.<PATCH>+1` (e.g., `1.0.1`) 
+    3. Select Source: `release-<MAJOR>.<MINOR>` (e.g., `release-1.0`)
     4. Add Release notes
     5. Create release
