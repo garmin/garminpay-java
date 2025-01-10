@@ -101,8 +101,7 @@ public final class GarminPayProxy {
     }
 
     /**
-     * Generates a client key pair and registers it with the Garmin Pay platform.
-     * Creates a shared secret or "key agreement" between the client and server keys to be used for encryption.
+     * Generates a client key pair and registers it with the Garmin Pay platform to be used for encryption.
      *
      * @param publicKey A public ecc key encoded and represented as a string.
      * @return ExchangeKeysResponse that contains keyId, active status and SecretKey for encryption

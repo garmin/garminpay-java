@@ -7,7 +7,6 @@
     <version>${revision}</version>
     <name>Garmin Pay SDK</name> 
     <description>The Official Garmin Pay SDK</description>
-    <url>https://docs.gp.garmin.com/</url>
     <licenses>
         <license>
             <name>Garmin Pay Software License Agreement</name>

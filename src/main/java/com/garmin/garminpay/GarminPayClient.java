@@ -22,8 +22,8 @@ import com.garmin.garminpay.proxy.GarminPayProxy;
  */
 @Slf4j
 public class GarminPayClient {
-    private static final String BASE_URL = "https://api.qa.fitpay.ninja";
-    private static final String AUTH_URL = "https://auth.qa.fitpay.ninja/oauth/token";
+    private static final String BASE_URL = "https://api.fit-pay.com";
+    private static final String AUTH_URL = "https://auth.fit-pay.com";
     private final GarminPayService garminPayService;
 
     /**
