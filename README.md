@@ -140,7 +140,10 @@ public class CheckHealthExample {
 The `registerCard` method takes in a `GarminPayCardData` object that is the card information that should be provisioned. It also takes a `callbackUrl` URI object that will be used to return to the issuer app after GCM has attempted provisioning.
 
 RegisterCardExample.java
+
 ```java
+import java.net.URI;
+
 public class RegisterCardExample {
 
     public static void main(String[] args) {
@@ -164,11 +167,12 @@ public class RegisterCardExample {
             .expMonth(...)
             .expYear(...)
             .name(...)
-            .address(garminPayAddress)
-            .build();
+            .address(garminPayAddress).build();
+
+        URI callbackUrl = URI.create("https://callback.com");
 
         // registerCard with Garmin Pay platform
-        RegisterCardResponse response = client.registerCard(garminPayCardData);
+        RegisterCardResponse response = client.registerCard(garminPayCardData, callbackUrl);
         ...
     }
 }
