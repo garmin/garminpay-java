@@ -45,6 +45,7 @@ final class GarminPayService {
      * Registers a card with the Garmin Pay platform.
      *
      * @param garminPayCardData Card to be registered
+     * @param callbackUrl URL to be called when the registration is complete
      * @return RegisterCardResponse containing deepLinkUrl with the corresponding push identifier
      */
     public RegisterCardResponse registerCard(GarminPayCardData garminPayCardData, URI callbackUrl) {
