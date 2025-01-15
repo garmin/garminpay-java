@@ -7,12 +7,26 @@
     <version>${revision}</version>
     <name>Garmin Pay SDK</name> 
     <description>The Official Garmin Pay SDK</description>
+    <url>https://github.com/garmin/garminpay-sdk-java</url>
     <licenses>
         <license>
             <name>Garmin Pay Software License Agreement</name>
             <url>https://github.com/garmin/garminpay-sdk-java/blob/main/LICENSE.txt</url>
         </license>
     </licenses>
+
+    <developers>
+        <developer>
+            <name>Garmin</name>
+            <organization>Garmin</organization>
+            <organizationUrl>https://www.garmin.com/</organizationUrl>
+        </developer>
+    </developers>
+    <scm>
+        <connection>scm:git:git://github.com/garmin/garminpay-sdk-java.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com:garmin/garminpay-sdk-java.git</developerConnection>
+        <url>https://github.com/garmin/garminpay-sdk-java</url>
+    </scm>
 
     <properties>
         <junit.jupiter.version>5.10.2</junit.jupiter.version>
@@ -154,6 +168,26 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>2.2.1</version>
+                <configuration>
+                    <excludes>
+                        <exclude>**/examples/</exclude>
+                        <exclude>**/csv/examples/</exclude>
+                        <exclude>**/plugins/examples/</exclude>
+                    </excludes>
+                </configuration>
+                <executions>
+                    <execution>
+                    <id>attach-sources</id>
+                    <goals>
+                        <goal>jar-no-fork</goal>
+                    </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.13.0</version>
                 <configuration>
@@ -239,8 +273,28 @@
                 <executions>
                     <execution>
                         <goals>
-                            <goal>format</goal>
+                            <goal>format</goal> 
                         </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>1.5</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>deploy</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                        <configuration>
+                            <gpgArguments>
+                                <arg>--pinentry-mode</arg>
+                                <arg>loopback</arg>
+                            </gpgArguments>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
