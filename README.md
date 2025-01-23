@@ -10,7 +10,7 @@ The deeplink sends a user to the Garmin Connect Mobile app where they will then 
 It is important to note that oAuth and payload encryption are abstracted away by the SDK. Anytime the `checkHealthStatus` or `registerCard`
 methods are called oAuth tokens to authenticate with Garmin Pay services are generated or used if previously generated. Anytime `registerCard` is called with a card, the card is encrypted securely to be sent to Garmin Pay.
 ## Onboarding
-TBD
+Please contact Garmin for onboarding instructions for your use case.
 
 ## Installation
 
