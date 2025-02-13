@@ -20,14 +20,14 @@ Please contact Garmin for onboarding instructions for your use case.
 
 ### Gradle
 
-`implementation "garminpay:garminpay-java:1.0.2"`
+`implementation "com.garmin:garminpay:1.0.2"`
 
 ### Maven
 
 ```
 <dependency>
-  <groupId>garminpay</groupId>
-  <artifactId>garminpay-java</artifactId>
+  <groupId>com.garmin</groupId>
+  <artifactId>garminpay</artifactId>
   <version>1.0.2</version>
 </dependency>
 ```
